@@ -1,19 +1,33 @@
-import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, Text, StyleSheet, TouchableOpacity, Animated, Image } from 'react-native';
 import { auth } from '../firebase/firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import Icon from 'react-native-vector-icons/Ionicons';
 
-const SignIn = ({ navigation }) => {
+import LogoImage from '../assets/icon.png';
+
+const SignIn = ({ navigation, route }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+
+    useEffect(() => {
+        if (route.params?.successMessage) {
+            setSuccessMessage(route.params.successMessage);
+            setShowSuccessPopup(true); // Show popup on success message
+            setTimeout(() => setShowSuccessPopup(false), 3000); // Auto hide after 3 seconds
+        }
+    }, [route.params?.successMessage]);
 
     const handleSignIn = () => {
         signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user;
                 console.log('User signed in:', user);
-                navigation.navigate('HomeScreen');
+                navigation.navigate('HomeScreen', { email: user.email });
             })
             .catch((error) => {
                 setError(error.message);
@@ -22,7 +36,14 @@ const SignIn = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+            <Image source={LogoImage} style={styles.logo} resizeMode="contain" />
+
             <Text style={styles.title}>Sign In</Text>
+            {showSuccessPopup && (
+                <Animated.View style={[styles.successPopup, { opacity: 1 }]}>
+                    <Text style={styles.successText}>{successMessage}</Text>
+                </Animated.View>
+            )}
             <TextInput
                 style={styles.input}
                 placeholder="Email"
@@ -31,18 +52,30 @@ const SignIn = ({ navigation }) => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCompleteType="email"
+                placeholderTextColor="#aaa"
             />
-            <TextInput
-                style={styles.input}
-                placeholder="Password"
-                value={password}
-                onChangeText={(text) => setPassword(text)}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCompleteType="password"
-            />
-            <Button title="Sign In" onPress={handleSignIn} />
+            <View style={styles.passwordContainer}>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Password"
+                    value={password}
+                    onChangeText={(text) => setPassword(text)}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCompleteType="password"
+                    placeholderTextColor="#aaa"
+                />
+                <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                >
+                    <Icon name={showPassword ? "eye-off" : "eye"} size={20} color="#aaa" />
+                </TouchableOpacity>
+            </View>
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            <TouchableOpacity style={styles.button} onPress={handleSignIn}>
+                <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
                 <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
             </TouchableOpacity>
@@ -56,28 +89,72 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 20,
+        backgroundColor: '#f8f9fa',
+    },
+    logo: {
+        width: 150,
+        height: 150,
+        marginBottom: 20,
     },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         marginBottom: 20,
+        color: '#333',
     },
     input: {
         width: '100%',
-        height: 40,
-        borderColor: '#ccc',
+        height: 50,
+        borderColor: '#ddd',
         borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 15,
+        marginBottom: 15,
+        backgroundColor: '#fff',
+        color: '#333',
+    },
+    passwordContainer: {
+        width: '100%',
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    eyeIcon: {
+        position: 'absolute',
+        right: 15,
+    },
+    successPopup: {
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        backgroundColor: 'green',
+        padding: 10,
         borderRadius: 5,
-        paddingHorizontal: 10,
-        marginBottom: 10,
+        elevation: 5,
+    },
+    successText: {
+        color: '#fff',
+        fontSize: 16,
     },
     errorText: {
         color: 'red',
         marginBottom: 10,
     },
+    button: {
+        width: '100%',
+        height: 50,
+        backgroundColor: '#007bff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 8,
+        marginTop: 10,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 18,
+    },
     signupText: {
         marginTop: 20,
-        color: 'blue',
-        textDecorationLine: 'underline',
+        color: '#0c0909',
+        textDecorationLine: 'none',
     },
 });
 
