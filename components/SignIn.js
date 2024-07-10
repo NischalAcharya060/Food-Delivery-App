@@ -3,7 +3,6 @@ import { View, TextInput, Text, StyleSheet, TouchableOpacity, Animated, Image } 
 import { auth } from '../firebase/firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import Icon from 'react-native-vector-icons/Ionicons';
-
 import LogoImage from '../assets/icon.png';
 
 const SignIn = ({ navigation, route }) => {
@@ -27,7 +26,7 @@ const SignIn = ({ navigation, route }) => {
             .then((userCredential) => {
                 const user = userCredential.user;
                 console.log('User signed in:', user);
-                navigation.navigate('HomeScreen', { email: user.email });
+                navigation.navigate('Home', { email: user.email });
             })
             .catch((error) => {
                 setError(error.message);
@@ -38,7 +37,7 @@ const SignIn = ({ navigation, route }) => {
         <View style={styles.container}>
             <Image source={LogoImage} style={styles.logo} resizeMode="contain" />
 
-            <Text style={styles.title}>Sign In</Text>
+            <Text style={styles.title}>Login</Text>
             {showSuccessPopup && (
                 <Animated.View style={[styles.successPopup, { opacity: 1 }]}>
                     <Text style={styles.successText}>{successMessage}</Text>
@@ -76,8 +75,8 @@ const SignIn = ({ navigation, route }) => {
             <TouchableOpacity style={styles.button} onPress={handleSignIn}>
                 <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-                <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={styles.signupText}>Don't have an account? Register</Text>
             </TouchableOpacity>
         </View>
     );

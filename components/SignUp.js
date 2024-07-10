@@ -17,7 +17,7 @@ const SignUp = ({ navigation }) => {
             .then((userCredential) => {
                 const user = userCredential.user;
                 console.log('User signed up:', user);
-                navigation.navigate('SignIn', { successMessage: 'You have registered successfully!' });
+                navigation.navigate('Login', { successMessage: 'You have registered successfully!' });
             })
             .catch((error) => {
                 setError(error.message);
@@ -28,7 +28,7 @@ const SignUp = ({ navigation }) => {
         <View style={styles.container}>
             <Image source={LogoImage} style={styles.logo} resizeMode="contain" />
 
-            <Text style={styles.title}>Sign Up</Text>
+            <Text style={styles.title}>Register</Text>
             <TextInput
                 style={styles.input}
                 placeholder="Email"
@@ -61,8 +61,8 @@ const SignUp = ({ navigation }) => {
             <TouchableOpacity style={styles.button} onPress={handleSignUp}>
                 <Text style={styles.buttonText}>Register</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
-                <Text style={styles.signinText}>Already have an account? Sign In</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.signinText}>Already have an account? Login</Text>
             </TouchableOpacity>
         </View>
     );

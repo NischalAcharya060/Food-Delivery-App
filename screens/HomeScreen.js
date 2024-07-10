@@ -5,6 +5,12 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import LogoImage from '../assets/icon.png';
 
 const HomeScreen = ({ navigation, route }) => {
+    const reloadApp = () => {
+        navigation.replace('Home');
+    };
+    const navigateToProfile = () => {
+        navigation.navigate('Profile');
+    };
 
     return (
         <View style={styles.container}>
@@ -13,8 +19,10 @@ const HomeScreen = ({ navigation, route }) => {
                 <TouchableOpacity style={styles.navbarIcon} onPress={() => navigation.openDrawer()}>
                     <Icon name="menu-outline" size={30} color="#333" />
                 </TouchableOpacity>
-                <Image source={LogoImage} style={styles.logo} resizeMode="contain" />
-                <TouchableOpacity style={styles.navbarIcon} onPress={() => navigation.navigate('Profile')}>
+                <TouchableOpacity onPress={reloadApp}>
+                    <Image source={LogoImage} style={styles.logo} resizeMode="contain" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.navbarIcon} onPress={navigateToProfile}>
                     <Icon name="person-circle-outline" size={30} color="#333" />
                 </TouchableOpacity>
             </View>
@@ -47,7 +55,7 @@ const styles = StyleSheet.create({
     },
     logo: {
         width: 120,
-        height: 40,
+        height: 60,
     },
     content: {
         flex: 1,
