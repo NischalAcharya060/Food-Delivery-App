@@ -16,7 +16,7 @@ const HomeScreen = ({ navigation, route }) => {
         <View style={styles.container}>
             {/* Navbar */}
             <View style={styles.navbar}>
-                <TouchableOpacity style={styles.navbarIcon} onPress={() => navigation.openDrawer()}>
+                <TouchableOpacity style={styles.navbarIcon}>
                     <Icon name="menu-outline" size={30} color="#333" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={reloadApp}>
