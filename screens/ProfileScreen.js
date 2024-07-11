@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { getAuth, updateProfile } from 'firebase/auth';
+import { getAuth, updateProfile, signOut } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { RadioButton } from 'react-native-paper';
 import MapView, { Marker, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 
-const ProfileScreen = () => {
+// Dummy profile picture URL or local require statement for image
+const dummyProfilePicture = require('../assets/img/profile.jpg');
+
+const ProfileScreen = ({ navigation }) => {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
@@ -92,9 +95,21 @@ const ProfileScreen = () => {
         }
     };
 
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            navigation.navigate('Login');
+        } catch (error) {
+            console.error('Error signing out:', error.message);
+            Alert.alert('Error', 'Failed to sign out. Please try again.');
+        }
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.content}>
+                <Image source={dummyProfilePicture} style={styles.profileImage} />
+
                 <View style={styles.inputContainer}>
                     <Icon name="person-outline" size={24} color="#333" style={styles.icon} />
                     <TextInput
@@ -134,7 +149,7 @@ const ProfileScreen = () => {
                     }}
                 >
                     <UrlTile
-                        urlTemplate="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         maximumZ={19}
                     />
                     <Marker coordinate={coordinates} />
@@ -171,6 +186,13 @@ const ProfileScreen = () => {
                 >
                     <Text style={styles.buttonText}>{isLoading ? 'Updating...' : 'Update Profile'}</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.logoutButton}
+                    onPress={handleLogout}
+                >
+                    <Text style={styles.logoutButtonText}>Logout</Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -180,18 +202,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8f9fa',
-    },
-    header: {
-        backgroundColor: '#fff',
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
-    },
-    headerText: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
     },
     content: {
         flex: 1,
@@ -232,9 +242,22 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 18,
     },
+    logoutButton: {
+        marginTop: 10,
+    },
+    logoutButtonText: {
+        color: '#dc3545',
+        fontSize: 16,
+    },
     map: {
         height: 200,
         width: '100%',
+        marginBottom: 20,
+    },
+    profileImage: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
         marginBottom: 20,
     },
 });

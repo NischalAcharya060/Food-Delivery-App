@@ -77,7 +77,7 @@ const RestaurantScreen = ({ navigation }) => {
                 }}
             >
                 <UrlTile
-                    urlTemplate="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     maximumZ={19}
                 />
                 <Marker coordinate={coordinates} />
