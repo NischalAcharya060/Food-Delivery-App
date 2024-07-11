@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Animated, Easing } from 'react-native';
 import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
+import { Searchbar, FAB } from 'react-native-paper';
 import Icon from "react-native-vector-icons/Ionicons";
 
 const dummyFoodImage = require('../assets/img/food.png');
@@ -13,6 +14,10 @@ const HomeScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [sortByPriceAsc, setSortByPriceAsc] = useState(false);
     const [sortByPriceDesc, setSortByPriceDesc] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filteredFoods, setFilteredFoods] = useState([]);
+    const [fabVisible, setFabVisible] = useState(true);
+    const animatedValue = new Animated.Value(0);
 
     const firestore = getFirestore();
 
@@ -34,7 +39,14 @@ const HomeScreen = ({ navigation }) => {
                 id: doc.id,
                 ...doc.data()
             }));
+
+            // Apply search filter
+            const filtered = foodList.filter(food =>
+                food.name.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+
             setFoods(foodList);
+            setFilteredFoods(filtered);
         } catch (error) {
             console.error('Error fetching foods:', error.message);
         } finally {
@@ -42,12 +54,17 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
-    // Fetch foods on initial load and when dependencies change
+    // Fetch foods on initial load
     useFocusEffect(
         React.useCallback(() => {
             fetchFoods();
-        }, [firestore, sortByPriceAsc, sortByPriceDesc])
+        }, [firestore, sortByPriceAsc, sortByPriceDesc, searchQuery])
     );
+
+    // Handle search input change
+    const handleSearch = (query) => {
+        setSearchQuery(query);
+    };
 
     // Navigate to food detail screen
     const handleBuyFood = (food) => {
@@ -69,6 +86,24 @@ const HomeScreen = ({ navigation }) => {
         navigation.navigate('AddFood');
     };
 
+    // Navigate to order History
+    const navigateToOrderHistory = () => {
+        navigation.navigate('OrderHistory');
+    };
+
+    const toggleFabVisibility = () => {
+        setFabVisible(!fabVisible);
+    };
+
+    useEffect(() => {
+        Animated.timing(animatedValue, {
+            toValue: fabVisible ? 0 : 1,
+            duration: 300,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true
+        }).start();
+    }, [fabVisible, animatedValue]);
+
     // Render each food item
     const renderFoodItem = ({ item }) => (
         <TouchableOpacity style={styles.foodCard} onPress={() => handleBuyFood(item)}>
@@ -89,6 +124,14 @@ const HomeScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+            {/* Searchbar */}
+            <Searchbar
+                placeholder="Search Foods"
+                onChangeText={handleSearch}
+                value={searchQuery}
+                style={styles.searchbar}
+            />
+
             {/* Sorting Buttons */}
             <View style={styles.sortButtons}>
                 <TouchableOpacity
@@ -118,9 +161,9 @@ const HomeScreen = ({ navigation }) => {
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#6200EE" />
                 </View>
-            ) : foods.length > 0 ? (
+            ) : filteredFoods.length > 0 ? (
                 <FlatList
-                    data={foods}
+                    data={filteredFoods}
                     renderItem={renderFoodItem}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.content}
@@ -141,10 +184,36 @@ const HomeScreen = ({ navigation }) => {
                 <TouchableOpacity style={styles.navbarIcon} onPress={navigateToAddFood}>
                     <Icon name="add-circle-outline" size={30} color="#333" />
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.navbarIcon} onPress={navigateToOrderHistory}>
+                    <Icon name="receipt-outline" size={30} color="#333" />
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.profileIcon} onPress={navigateToProfile}>
                     <Image source={profileImage} style={styles.profileImage} />
                 </TouchableOpacity>
             </View>
+
+            {/* Floating Action Button */}
+            <Animated.View
+                style={[
+                    styles.fabContainer,
+                    {
+                        transform: [
+                            {
+                                translateY: animatedValue.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [0, 100]
+                                })
+                            }
+                        ]
+                    }
+                ]}
+            >
+                <FAB
+                    icon="plus"
+                    style={styles.fab}
+                    onPress={navigateToAddFood}
+                />
+            </Animated.View>
         </View>
     );
 };
@@ -227,6 +296,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         alignItems: 'center',
         alignSelf: 'flex-start',
+        marginTop: 8,
     },
     buyButtonText: {
         color: '#fff',
@@ -261,6 +331,18 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 15,
+    },
+    searchbar: {
+        marginBottom: 10,
+    },
+    fabContainer: {
+        position: 'absolute',
+        bottom: 80,
+        right: 20,
+        opacity: 0.8,
+    },
+    fab: {
+        backgroundColor: '#6200EE',
     },
 });
 

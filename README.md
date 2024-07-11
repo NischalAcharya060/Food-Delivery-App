@@ -2,7 +2,7 @@
 
 This is a Food Delivery App built using **Expo** and **Firebase**. It features user authentication, profile management, real-time data updates, map integration, and a clean, modern UI.
 
-![App Screenshot](https://i.postimg.cc/fRMQSWY2/Food-Delivery.png)
+![App Screenshot](https://i.postimg.cc/VLyGZYLY/Food-Delivery.png)
 
 ## Table of Contents
 

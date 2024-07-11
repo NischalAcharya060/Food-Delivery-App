@@ -1,13 +1,39 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
 import Icon from "react-native-vector-icons/Ionicons";
+import { db, auth } from '../firebase/firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
 
 const FoodDetailScreen = ({ route }) => {
     const { food } = route.params;
     const [quantity, setQuantity] = useState(1);
 
-    const handleBuyFood = () => {
-        Alert.alert('Success', `You have bought ${quantity} ${food.name}(s) for $${food.price * quantity}`);
+    const handleBuyFood = async () => {
+        const user = auth.currentUser;
+        if (user) {
+            try {
+                const orderId = `order_${new Date().getTime()}`;
+                const orderDoc = doc(db, 'orders', orderId);
+                await setDoc(orderDoc, {
+                    userId: user.uid,
+                    date: new Date().toISOString(),
+                    total: food.price * quantity,
+                    items: [
+                        {
+                            name: food.name,
+                            price: food.price,
+                            quantity: quantity
+                        }
+                    ]
+                });
+                Alert.alert('Success', `You have bought ${quantity} ${food.name}(s) for Rs. ${food.price * quantity}`);
+            } catch (error) {
+                console.error("Error adding order: ", error);
+                Alert.alert('Error', 'There was an error processing your order. Please try again.');
+            }
+        } else {
+            Alert.alert('Error', 'You need to be logged in to place an order.');
+        }
     };
 
     return (
@@ -45,7 +71,6 @@ const FoodDetailScreen = ({ route }) => {
                     </View>
                 </View>
 
-                {/* Buy Button */}
                 <TouchableOpacity style={styles.buyButton} onPress={handleBuyFood}>
                     <Text style={styles.buyButtonText}>Buy Now</Text>
                 </TouchableOpacity>
