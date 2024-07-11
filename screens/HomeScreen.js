@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
+import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from "react-native-vector-icons/Ionicons";
 
@@ -11,51 +11,65 @@ const HomeScreen = ({ navigation }) => {
     const [foods, setFoods] = useState([]);
     const [profileImage, setProfileImage] = useState(dummyProfileImage);
     const [loading, setLoading] = useState(true);
+    const [sortByPriceAsc, setSortByPriceAsc] = useState(false);
+    const [sortByPriceDesc, setSortByPriceDesc] = useState(false);
 
     const firestore = getFirestore();
 
+    // Function to fetch foods
+    const fetchFoods = async () => {
+        setLoading(true);
+        try {
+            let foodCollection = collection(firestore, 'foods');
+
+            // Apply sorting
+            if (sortByPriceAsc) {
+                foodCollection = query(foodCollection, orderBy('price', 'asc'));
+            } else if (sortByPriceDesc) {
+                foodCollection = query(foodCollection, orderBy('price', 'desc'));
+            }
+
+            const foodSnapshot = await getDocs(foodCollection);
+            const foodList = foodSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setFoods(foodList);
+        } catch (error) {
+            console.error('Error fetching foods:', error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch foods on initial load and when dependencies change
     useFocusEffect(
         React.useCallback(() => {
-            const fetchFoods = async () => {
-                setLoading(true);
-                try {
-                    const foodCollection = collection(firestore, 'foods');
-                    const foodSnapshot = await getDocs(foodCollection);
-                    const foodList = foodSnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    setFoods(foodList);
-                } catch (error) {
-                    console.error('Error fetching foods:', error.message);
-                } finally {
-                    setLoading(false);
-                }
-            };
-
             fetchFoods();
-
-            return () => {
-            };
-        }, [firestore])
+        }, [firestore, sortByPriceAsc, sortByPriceDesc])
     );
 
+    // Navigate to food detail screen
     const handleBuyFood = (food) => {
         navigation.navigate('FoodDetail', { food });
     };
 
+    // Navigate to profile screen
     const navigateToProfile = () => {
         navigation.navigate('Profile');
     };
 
+    // Navigate to restaurant screen
     const navigateToRestaurant = () => {
         navigation.navigate('Restaurant');
     };
 
+    // Navigate to add food screen
     const navigateToAddFood = () => {
         navigation.navigate('AddFood');
     };
 
+    // Render each food item
     const renderFoodItem = ({ item }) => (
         <TouchableOpacity style={styles.foodCard} onPress={() => handleBuyFood(item)}>
             <Image
@@ -76,23 +90,43 @@ const HomeScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+            {/* Sorting Buttons */}
+            <View style={styles.sortButtons}>
+                <TouchableOpacity
+                    style={[styles.sortButton, sortByPriceAsc && styles.activeSortButton]}
+                    onPress={() => {
+                        setSortByPriceAsc(true);
+                        setSortByPriceDesc(false);
+                    }}
+                >
+                    <Text style={styles.sortButtonText}>Low to High</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.sortButton, sortByPriceDesc && styles.activeSortButton]}
+                    onPress={() => {
+                        setSortByPriceAsc(false);
+                        setSortByPriceDesc(true);
+                    }}
+                >
+                    <Text style={styles.sortButtonText}>High to Low</Text>
+                </TouchableOpacity>
+            </View>
+
             {/* Main Content */}
             {loading ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#6200EE" />
                 </View>
+            ) : foods.length > 0 ? (
+                <FlatList
+                    data={foods}
+                    renderItem={renderFoodItem}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.content}
+                    numColumns={2}
+                />
             ) : (
-                <View style={styles.content}>
-                    {foods.length === 0 ? (
-                        <Text style={styles.emptyText}>No food items available</Text>
-                    ) : (
-                        foods.map(item => (
-                            <View key={item.id} style={styles.foodItemWrapper}>
-                                {renderFoodItem({ item })}
-                            </View>
-                        ))
-                    )}
-                </View>
+                <Text style={styles.emptyText}>No foods found</Text>
             )}
 
             {/* Footer Navbar */}
@@ -118,7 +152,31 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8f9fa',
+        paddingHorizontal: 10,
+        paddingBottom: 60,
         position: 'relative',
+    },
+    sortButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
+    sortButton: {
+        flex: 1,
+        backgroundColor: '#eee',
+        paddingVertical: 12,
+        borderRadius: 5,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 5,
+    },
+    activeSortButton: {
+        color: '#e3e0e0',
+        backgroundColor: '#6200EE',
+    },
+    sortButtonText: {
+        color: '#333',
+        fontSize: 16,
     },
     loadingContainer: {
         flex: 1,
@@ -126,22 +184,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     content: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        padding: 10,
-    },
-    foodItemWrapper: {
-        width: '50%',
-        padding: 10,
+        flexGrow: 1,
     },
     foodCard: {
+        flex: 1,
         backgroundColor: '#fff',
         borderRadius: 10,
         shadowColor: '#000',
         shadowOpacity: 0.1,
         shadowRadius: 10,
         elevation: 5,
-        marginBottom: 20,
+        margin: 5,
     },
     foodImage: {
         width: '100%',
