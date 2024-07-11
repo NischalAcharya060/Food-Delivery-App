@@ -33,9 +33,9 @@ const AddFoodScreen = ({ navigation }) => {
 
     const handleRestaurantSelect = (restaurantId) => {
         if (selectedRestaurant === restaurantId) {
-            setSelectedRestaurant(null); // Deselect if already selected
+            setSelectedRestaurant(null);
         } else {
-            setSelectedRestaurant(restaurantId); // Select the new restaurant
+            setSelectedRestaurant(restaurantId);
         }
     };
 
@@ -70,10 +70,6 @@ const AddFoodScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.headerText}>Add Food</Text>
-            </View>
-
             <View style={styles.content}>
                 <View style={styles.inputContainer}>
                     <Icon name="fast-food-outline" size={24} color="#333" style={styles.icon} />
@@ -86,8 +82,9 @@ const AddFoodScreen = ({ navigation }) => {
                 </View>
                 <View style={styles.inputContainer}>
                     <Icon name="pricetag-outline" size={24} color="#333" style={styles.icon} />
+                    <Text style={styles.currencyPrefix}>NPR</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, { flex: 1 }]}
                         placeholder="Price"
                         value={price}
                         onChangeText={setPrice}
@@ -104,9 +101,11 @@ const AddFoodScreen = ({ navigation }) => {
                         >
                             <View style={styles.checkboxContent}>
                                 {selectedRestaurant === rest.id && (
-                                    <Icon name="checkmark" size={16} color="#fff" />
+                                    <Icon name="checkmark" size={16} color="#fff" style={styles.checkboxIcon} />
                                 )}
-                                <Text style={styles.checkboxText}>{rest.name}</Text>
+                                <Text style={[styles.checkboxText, selectedRestaurant === rest.id && styles.checkboxTextSelected]}>
+                                    {rest.name}
+                                </Text>
                             </View>
                         </TouchableOpacity>
                     ))}
@@ -118,7 +117,6 @@ const AddFoodScreen = ({ navigation }) => {
                         placeholder="Description"
                         value={description}
                         onChangeText={setDescription}
-                        multiline
                     />
                 </View>
 
@@ -189,6 +187,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#333',
     },
+    currencyPrefix: {
+        fontSize: 16,
+        color: '#333',
+        marginRight: 5,
+    },
     checkboxContainer: {
         marginBottom: 20,
     },
@@ -201,12 +204,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
+        paddingHorizontal: 15,
+        paddingVertical: 10,
         backgroundColor: '#fff',
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#333',
+        borderColor: '#007bff',
     },
     checkboxSelected: {
         backgroundColor: '#007bff',
@@ -216,10 +219,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
+    checkboxIcon: {
+        marginRight: 10,
+    },
     checkboxText: {
         marginLeft: 10,
         fontSize: 16,
-        color: '#333',
+        color: '#007bff',
+    },
+    checkboxTextSelected: {
+        color: '#fff',
     },
     button: {
         backgroundColor: '#007bff',

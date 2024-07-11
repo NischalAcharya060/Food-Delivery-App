@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import MapView, { Marker, UrlTile } from 'react-native-maps';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import * as Location from 'expo-location';
 
 const RestaurantScreen = ({ navigation }) => {
     const [name, setName] = useState('');
@@ -10,6 +12,7 @@ const RestaurantScreen = ({ navigation }) => {
     const [cuisine, setCuisine] = useState('');
     const [description, setDescription] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [coordinates, setCoordinates] = useState({ latitude: 37.7749, longitude: -122.4194 });
 
     const firestore = getFirestore();
 
@@ -28,6 +31,7 @@ const RestaurantScreen = ({ navigation }) => {
                 phone,
                 cuisine,
                 description,
+                coordinates,
             });
 
             Alert.alert('Success', 'Restaurant added successfully.');
@@ -44,11 +48,40 @@ const RestaurantScreen = ({ navigation }) => {
         }
     };
 
+    useEffect(() => {
+        const fetchCoordinates = async () => {
+            if (address !== '') {
+                try {
+                    let response = await Location.geocodeAsync(address);
+                    if (response.length > 0) {
+                        setCoordinates({ latitude: response[0].latitude, longitude: response[0].longitude });
+                    }
+                } catch (error) {
+                    console.error('Error fetching coordinates:', error);
+                }
+            }
+        };
+
+        fetchCoordinates();
+    }, [address]);
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.headerText}>Add Restaurant</Text>
-            </View>
+            <MapView
+                style={styles.map}
+                region={{
+                    latitude: coordinates.latitude,
+                    longitude: coordinates.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                }}
+            >
+                <UrlTile
+                    urlTemplate="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    maximumZ={19}
+                />
+                <Marker coordinate={coordinates} />
+            </MapView>
 
             <View style={styles.content}>
                 <View style={styles.inputContainer}>
@@ -76,6 +109,7 @@ const RestaurantScreen = ({ navigation }) => {
                         placeholder="Phone Number"
                         value={phone}
                         onChangeText={setPhone}
+                        keyboardType="numeric"
                     />
                 </View>
                 <View style={styles.inputContainer}>
@@ -94,7 +128,6 @@ const RestaurantScreen = ({ navigation }) => {
                         placeholder="Description"
                         value={description}
                         onChangeText={setDescription}
-                        multiline
                     />
                 </View>
 
@@ -166,6 +199,11 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: 18,
+    },
+    map: {
+        height: 200,
+        width: '100%',
+        marginBottom: 20,
     },
 });
 

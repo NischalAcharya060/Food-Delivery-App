@@ -79,8 +79,7 @@ const HomeScreen = ({ navigation }) => {
             />
             <View style={styles.foodCardContent}>
                 <Text style={styles.foodName}>{item.name}</Text>
-                <Text style={styles.foodPrice}>${item.price}</Text>
-                <Text style={styles.foodDescription}>{item.description}</Text>
+                <Text style={styles.foodPrice}>Rs. {item.price}</Text>
                 <TouchableOpacity style={styles.buyButton} onPress={() => handleBuyFood(item)}>
                     <Text style={styles.buyButtonText}>Buy</Text>
                 </TouchableOpacity>
@@ -97,18 +96,20 @@ const HomeScreen = ({ navigation }) => {
                     onPress={() => {
                         setSortByPriceAsc(true);
                         setSortByPriceDesc(false);
+                        fetchFoods();
                     }}
                 >
-                    <Text style={styles.sortButtonText}>Low to High</Text>
+                    <Text style={[styles.sortButtonText, sortByPriceAsc && styles.activeSortButtonText]}>Low to High</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.sortButton, sortByPriceDesc && styles.activeSortButton]}
                     onPress={() => {
                         setSortByPriceAsc(false);
                         setSortByPriceDesc(true);
+                        fetchFoods();
                     }}
                 >
-                    <Text style={styles.sortButtonText}>High to Low</Text>
+                    <Text style={[styles.sortButtonText, sortByPriceDesc && styles.activeSortButtonText]}>High to Low</Text>
                 </TouchableOpacity>
             </View>
 
@@ -171,12 +172,14 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
     },
     activeSortButton: {
-        color: '#e3e0e0',
         backgroundColor: '#6200EE',
     },
     sortButtonText: {
         color: '#333',
         fontSize: 16,
+    },
+    activeSortButtonText: {
+        color: '#ffffff',
     },
     loadingContainer: {
         flex: 1,
@@ -185,6 +188,7 @@ const styles = StyleSheet.create({
     },
     content: {
         flexGrow: 1,
+        paddingHorizontal: 5,
     },
     foodCard: {
         flex: 1,
@@ -194,7 +198,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 10,
         elevation: 5,
-        margin: 5,
+        margin: 8,
     },
     foodImage: {
         width: '100%',
@@ -206,32 +210,27 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     foodName: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
-        marginBottom: 5,
+        marginBottom: 4,
         color: '#333',
     },
     foodPrice: {
-        fontSize: 16,
-        color: '#6200EE',
-        marginBottom: 5,
-    },
-    foodDescription: {
         fontSize: 14,
-        color: '#555',
-        marginBottom: 10,
+        color: '#6200EE',
+        marginBottom: 4,
     },
     buyButton: {
         backgroundColor: '#6200EE',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 5,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 4,
         alignItems: 'center',
         alignSelf: 'flex-start',
     },
     buyButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 14,
     },
     emptyText: {
         alignSelf: 'center',

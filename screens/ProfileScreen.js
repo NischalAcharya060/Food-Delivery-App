@@ -4,12 +4,16 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { getAuth, updateProfile } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { RadioButton } from 'react-native-paper';
+import MapView, { Marker, UrlTile } from 'react-native-maps';
+import * as Location from 'expo-location';
 
 const ProfileScreen = () => {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [role, setRole] = useState('user');
+    const [address, setAddress] = useState('');
+    const [coordinates, setCoordinates] = useState({ latitude: 37.7749, longitude: -122.4194 });
     const [isLoading, setIsLoading] = useState(false);
 
     const auth = getAuth();
@@ -26,17 +30,38 @@ const ProfileScreen = () => {
                     setPhone(userData.phone || '');
                     setName(userData.name || '');
                     setRole(userData.role || 'user');
+                    setAddress(userData.address || '');
+                    setCoordinates(userData.coordinates || { latitude: 37.7749, longitude: -122.4194 });
                 }
             } else {
                 setEmail('');
                 setName('');
                 setPhone('');
                 setRole('user');
+                setAddress('');
+                setCoordinates({ latitude: 37.7749, longitude: -122.4194 });
             }
         });
 
         return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        const fetchCoordinates = async () => {
+            if (address !== '') {
+                try {
+                    let response = await Location.geocodeAsync(address);
+                    if (response.length > 0) {
+                        setCoordinates({ latitude: response[0].latitude, longitude: response[0].longitude });
+                    }
+                } catch (error) {
+                    console.error('Error fetching coordinates:', error);
+                }
+            }
+        };
+
+        fetchCoordinates();
+    }, [address]);
 
     const handleSaveProfile = async () => {
         try {
@@ -49,10 +74,12 @@ const ProfileScreen = () => {
                 });
 
                 await setDoc(doc(firestore, 'users', user.uid), {
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    role: role,
+                    name,
+                    email,
+                    phone,
+                    role,
+                    address,
+                    coordinates,
                 });
 
                 Alert.alert('Profile Updated', 'Your profile has been updated successfully.');
@@ -67,10 +94,6 @@ const ProfileScreen = () => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.headerText}>Profile</Text>
-            </View>
-
             <View style={styles.content}>
                 <View style={styles.inputContainer}>
                     <Icon name="person-outline" size={24} color="#333" style={styles.icon} />
@@ -99,6 +122,30 @@ const ProfileScreen = () => {
                         value={phone}
                         onChangeText={setPhone}
                         keyboardType="phone-pad"
+                    />
+                </View>
+                <MapView
+                    style={styles.map}
+                    region={{
+                        latitude: coordinates.latitude,
+                        longitude: coordinates.longitude,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01,
+                    }}
+                >
+                    <UrlTile
+                        urlTemplate="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        maximumZ={19}
+                    />
+                    <Marker coordinate={coordinates} />
+                </MapView>
+                <View style={styles.inputContainer}>
+                    <Icon name="home-outline" size={24} color="#333" style={styles.icon} />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Address"
+                        value={address}
+                        onChangeText={setAddress}
                     />
                 </View>
                 <View style={styles.inputContainer}>
@@ -184,6 +231,11 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: 18,
+    },
+    map: {
+        height: 200,
+        width: '100%',
+        marginBottom: 20,
     },
 });
 

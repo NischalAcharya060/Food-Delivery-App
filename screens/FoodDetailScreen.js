@@ -22,7 +22,7 @@ const FoodDetailScreen = ({ route }) => {
             {/* Food Details */}
             <View style={styles.detailsContainer}>
                 <Text style={styles.foodName}>{food.name}</Text>
-                <Text style={styles.foodPrice}>${food.price}</Text>
+                <Text style={styles.foodPrice}>Rs. {food.price}</Text>
                 <Text style={styles.foodDescription}>{food.description}</Text>
 
                 {/* Quantity Selector */}
