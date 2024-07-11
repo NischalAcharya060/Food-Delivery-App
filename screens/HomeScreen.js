@@ -41,7 +41,7 @@ const HomeScreen = ({ navigation }) => {
     );
 
     const handleBuyFood = (food) => {
-        Alert.alert('Success', `You have bought ${food.name} for ${food.price}`);
+        navigation.navigate('FoodDetail', { food });
     };
 
     const navigateToProfile = () => {
