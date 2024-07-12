@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Animated, Easing, Modal } from 'react-native';
 import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
-import { Searchbar, FAB } from 'react-native-paper';
+import { Searchbar, FAB, Button, Checkbox } from 'react-native-paper';
 import Icon from "react-native-vector-icons/Ionicons";
 
 const dummyFoodImage = require('../assets/img/food.png');
@@ -18,6 +18,7 @@ const HomeScreen = ({ navigation }) => {
     const [filteredFoods, setFilteredFoods] = useState([]);
     const [fabVisible, setFabVisible] = useState(true);
     const animatedValue = new Animated.Value(0);
+    const [modalVisible, setModalVisible] = useState(false);
 
     const firestore = getFirestore();
 
@@ -61,7 +62,6 @@ const HomeScreen = ({ navigation }) => {
         }, [firestore, sortByPriceAsc, sortByPriceDesc, searchQuery])
     );
 
-    // Handle search input change
     const handleSearch = (query) => {
         setSearchQuery(query);
     };
@@ -95,6 +95,13 @@ const HomeScreen = ({ navigation }) => {
         setFabVisible(!fabVisible);
     };
 
+    const clearFilters = () => {
+        setSortByPriceAsc(false);
+        setSortByPriceDesc(false);
+        setSearchQuery('');
+        fetchFoods();
+    };
+
     useEffect(() => {
         Animated.timing(animatedValue, {
             toValue: fabVisible ? 0 : 1,
@@ -124,37 +131,23 @@ const HomeScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            {/* Searchbar */}
-            <Searchbar
-                placeholder="Search Foods"
-                onChangeText={handleSearch}
-                value={searchQuery}
-                style={styles.searchbar}
-            />
-
-            {/* Sorting Buttons */}
-            <View style={styles.sortButtons}>
-                <TouchableOpacity
-                    style={[styles.sortButton, sortByPriceAsc && styles.activeSortButton]}
-                    onPress={() => {
-                        setSortByPriceAsc(true);
-                        setSortByPriceDesc(false);
-                        fetchFoods();
-                    }}
-                >
-                    <Text style={[styles.sortButtonText, sortByPriceAsc && styles.activeSortButtonText]}>Low to High</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.sortButton, sortByPriceDesc && styles.activeSortButton]}
-                    onPress={() => {
-                        setSortByPriceAsc(false);
-                        setSortByPriceDesc(true);
-                        fetchFoods();
-                    }}
-                >
-                    <Text style={[styles.sortButtonText, sortByPriceDesc && styles.activeSortButtonText]}>High to Low</Text>
+            {/* Searchbar and Filter Icon */}
+            <View style={styles.searchbarContainer}>
+                <Searchbar
+                    placeholder="Search Foods"
+                    onChangeText={handleSearch}
+                    value={searchQuery}
+                    style={styles.searchbar}
+                />
+                <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.filterIcon}>
+                    <Icon name="filter-outline" size={24} color="#6200EE" />
                 </TouchableOpacity>
             </View>
+
+            {/* Clear Filters Button */}
+            <Button mode="contained" onPress={clearFilters} style={styles.clearButton}>
+                Clear Filters
+            </Button>
 
             {/* Main Content */}
             {loading ? (
@@ -214,6 +207,47 @@ const HomeScreen = ({ navigation }) => {
                     onPress={navigateToAddFood}
                 />
             </Animated.View>
+
+            {/* Sorting Modal */}
+            <Modal
+                transparent={true}
+                animationType="slide"
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Sort by Price</Text>
+                        <View style={styles.checkboxContainer}>
+                            <Checkbox
+                                status={sortByPriceAsc ? 'checked' : 'unchecked'}
+                                onPress={() => {
+                                    setSortByPriceAsc(true);
+                                    setSortByPriceDesc(false);
+                                    fetchFoods();
+                                    setModalVisible(false);
+                                }}
+                            />
+                            <Text style={styles.checkboxLabel}>Low to High</Text>
+                        </View>
+                        <View style={styles.checkboxContainer}>
+                            <Checkbox
+                                status={sortByPriceDesc ? 'checked' : 'unchecked'}
+                                onPress={() => {
+                                    setSortByPriceAsc(false);
+                                    setSortByPriceDesc(true);
+                                    fetchFoods();
+                                    setModalVisible(false);
+                                }}
+                            />
+                            <Text style={styles.checkboxLabel}>High to Low</Text>
+                        </View>
+                        <Button mode="contained" onPress={() => setModalVisible(false)} style={styles.modalCloseButton}>
+                            Close
+                        </Button>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -226,29 +260,21 @@ const styles = StyleSheet.create({
         paddingBottom: 60,
         position: 'relative',
     },
-    sortButtons: {
+    searchbarContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 10,
     },
-    sortButton: {
+    searchbar: {
         flex: 1,
-        backgroundColor: '#eee',
-        paddingVertical: 12,
-        borderRadius: 5,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginHorizontal: 5,
     },
-    activeSortButton: {
-        backgroundColor: '#6200EE',
+    filterIcon: {
+        marginLeft: 10,
     },
-    sortButtonText: {
-        color: '#333',
-        fontSize: 16,
-    },
-    activeSortButtonText: {
-        color: '#ffffff',
+    clearButton: {
+        marginBottom: 10,
+        alignSelf: 'center',
+        width: '90%',
     },
     loadingContainer: {
         flex: 1,
@@ -257,92 +283,118 @@ const styles = StyleSheet.create({
     },
     content: {
         flexGrow: 1,
-        paddingHorizontal: 5,
     },
     foodCard: {
         flex: 1,
         backgroundColor: '#fff',
         borderRadius: 10,
+        margin: 10,
+        padding: 10,
         shadowColor: '#000',
         shadowOpacity: 0.1,
         shadowRadius: 10,
         elevation: 5,
-        margin: 8,
     },
     foodImage: {
         width: '100%',
-        height: 150,
-        borderTopLeftRadius: 10,
-        borderTopRightRadius: 10,
+        height: 100,
+        borderRadius: 10,
     },
     foodCardContent: {
-        padding: 10,
+        alignItems: 'center',
     },
     foodName: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 4,
-        color: '#333',
+        marginTop: 10,
     },
     foodPrice: {
-        fontSize: 14,
-        color: '#6200EE',
-        marginBottom: 4,
+        fontSize: 16,
+        color: '#888',
+        marginVertical: 5,
     },
     buyButton: {
         backgroundColor: '#6200EE',
-        paddingVertical: 6,
+        borderRadius: 5,
+        paddingVertical: 5,
         paddingHorizontal: 10,
-        borderRadius: 4,
-        alignItems: 'center',
-        alignSelf: 'flex-start',
-        marginTop: 8,
+        marginTop: 5,
     },
     buyButtonText: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: 16,
     },
     emptyText: {
-        alignSelf: 'center',
-        marginTop: 50,
         fontSize: 18,
-        color: '#6200EE',
+        textAlign: 'center',
+        marginTop: 20,
     },
     footerNavbar: {
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-around',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderTopWidth: 1,
-        borderTopColor: '#ddd',
+        alignItems: 'center',
         backgroundColor: '#fff',
+        paddingVertical: 10,
         position: 'absolute',
         bottom: 0,
-        width: '100%',
+        left: 0,
+        right: 0,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 5,
     },
     navbarIcon: {
-        padding: 10,
+        flex: 1,
+        alignItems: 'center',
     },
     profileIcon: {
-        padding: 10,
+        flex: 1,
+        alignItems: 'center',
+        marginRight: 10,
     },
     profileImage: {
         width: 30,
         height: 30,
         borderRadius: 15,
     },
-    searchbar: {
-        marginBottom: 10,
-    },
     fabContainer: {
         position: 'absolute',
-        bottom: 80,
         right: 20,
-        opacity: 0.8,
+        bottom: 80,
     },
     fab: {
         backgroundColor: '#6200EE',
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        width: '80%',
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 10,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    checkboxContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    checkboxLabel: {
+        marginLeft: 10,
+        fontSize: 16,
+    },
+    modalCloseButton: {
+        marginTop: 20,
     },
 });
 
