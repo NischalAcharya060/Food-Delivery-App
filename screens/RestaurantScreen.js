@@ -116,7 +116,7 @@ const RestaurantScreen = ({ navigation }) => {
                     <Icon name="fast-food-outline" size={24} color="#333" style={styles.icon} />
                     <TextInput
                         style={styles.input}
-                        placeholder="Cuisine Type"
+                        placeholder="Food Type"
                         value={cuisine}
                         onChangeText={setCuisine}
                     />
