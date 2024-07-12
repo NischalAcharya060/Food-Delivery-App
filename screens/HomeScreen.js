@@ -27,27 +27,14 @@ const HomeScreen = ({ navigation }) => {
         setLoading(true);
         try {
             let foodCollection = collection(firestore, 'foods');
-
-            // Apply sorting
-            if (sortByPriceAsc) {
-                foodCollection = query(foodCollection, orderBy('price', 'asc'));
-            } else if (sortByPriceDesc) {
-                foodCollection = query(foodCollection, orderBy('price', 'desc'));
-            }
-
             const foodSnapshot = await getDocs(foodCollection);
             const foodList = foodSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
 
-            // Apply search filter
-            const filtered = foodList.filter(food =>
-                food.name.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-
             setFoods(foodList);
-            setFilteredFoods(filtered);
+            applyFilters(foodList);
         } catch (error) {
             console.error('Error fetching foods:', error.message);
         } finally {
@@ -55,11 +42,30 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
-    // Fetch foods on initial load
+    // Function to apply filters and sorting
+    const applyFilters = (foodList) => {
+        let filtered = foodList;
+
+        if (searchQuery) {
+            filtered = filtered.filter(food =>
+                food.name.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+
+        if (sortByPriceAsc) {
+            filtered = filtered.sort((a, b) => a.price - b.price);
+        } else if (sortByPriceDesc) {
+            filtered = filtered.sort((a, b) => b.price - a.price);
+        }
+
+        setFilteredFoods(filtered);
+    };
+
+    // Fetch foods on initial load and when sort or search query changes
     useFocusEffect(
         React.useCallback(() => {
             fetchFoods();
-        }, [firestore, sortByPriceAsc, sortByPriceDesc, searchQuery])
+        }, [sortByPriceAsc, sortByPriceDesc, searchQuery])
     );
 
     const handleSearch = (query) => {
@@ -224,7 +230,6 @@ const HomeScreen = ({ navigation }) => {
                                 onPress={() => {
                                     setSortByPriceAsc(true);
                                     setSortByPriceDesc(false);
-                                    fetchFoods();
                                     setModalVisible(false);
                                 }}
                             />
@@ -236,7 +241,6 @@ const HomeScreen = ({ navigation }) => {
                                 onPress={() => {
                                     setSortByPriceAsc(false);
                                     setSortByPriceDesc(true);
-                                    fetchFoods();
                                     setModalVisible(false);
                                 }}
                             />
@@ -263,95 +267,84 @@ const styles = StyleSheet.create({
     searchbarContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
+        marginVertical: 10,
     },
     searchbar: {
         flex: 1,
+        marginRight: 10,
     },
     filterIcon: {
-        marginLeft: 10,
+        padding: 5,
+        backgroundColor: '#EDEDED',
+        borderRadius: 10,
     },
     clearButton: {
-        marginBottom: 10,
-        alignSelf: 'center',
-        width: '90%',
+        marginVertical: 10,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    content: {
-        flexGrow: 1,
-    },
     foodCard: {
-        flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#ffffff',
         borderRadius: 10,
-        margin: 10,
-        padding: 10,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 5,
+        overflow: 'hidden',
+        margin: 5,
+        flex: 1,
+        elevation: 3,
     },
     foodImage: {
         width: '100%',
-        height: 100,
-        borderRadius: 10,
+        height: 150,
     },
     foodCardContent: {
-        alignItems: 'center',
+        padding: 10,
     },
     foodName: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
-        marginTop: 10,
     },
     foodPrice: {
-        fontSize: 16,
-        color: '#888',
+        fontSize: 14,
+        color: '#777',
         marginVertical: 5,
     },
     buyButton: {
         backgroundColor: '#6200EE',
-        borderRadius: 5,
         paddingVertical: 5,
-        paddingHorizontal: 10,
-        marginTop: 5,
+        borderRadius: 5,
+        alignItems: 'center',
     },
     buyButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 14,
     },
     emptyText: {
-        fontSize: 18,
         textAlign: 'center',
         marginTop: 20,
+        fontSize: 18,
+    },
+    content: {
+        paddingBottom: 100,
     },
     footerNavbar: {
         flexDirection: 'row',
         justifyContent: 'space-around',
         alignItems: 'center',
-        backgroundColor: '#fff',
         paddingVertical: 10,
+        backgroundColor: '#ffffff',
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 5,
+        elevation: 10,
     },
     navbarIcon: {
-        flex: 1,
-        alignItems: 'center',
+        padding: 10,
     },
     profileIcon: {
-        flex: 1,
-        alignItems: 'center',
-        marginRight: 10,
+        padding: 5,
     },
     profileImage: {
         width: 30,
@@ -360,8 +353,8 @@ const styles = StyleSheet.create({
     },
     fabContainer: {
         position: 'absolute',
-        right: 20,
-        bottom: 80,
+        right: 16,
+        bottom: 16,
     },
     fab: {
         backgroundColor: '#6200EE',
@@ -374,15 +367,15 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         width: '80%',
-        backgroundColor: '#fff',
         padding: 20,
+        backgroundColor: '#fff',
         borderRadius: 10,
+        alignItems: 'center',
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 20,
-        textAlign: 'center',
     },
     checkboxContainer: {
         flexDirection: 'row',
@@ -390,7 +383,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     checkboxLabel: {
-        marginLeft: 10,
+        marginLeft: 8,
         fontSize: 16,
     },
     modalCloseButton: {
