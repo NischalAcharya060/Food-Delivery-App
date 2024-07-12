@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Animated, Easing, Modal } from 'react-native';
-import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Animated, Modal } from 'react-native';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
-import { Searchbar, FAB, Button, Checkbox } from 'react-native-paper';
+import { Searchbar, Button, Checkbox } from 'react-native-paper';
 import Icon from "react-native-vector-icons/Ionicons";
 
 const dummyFoodImage = require('../assets/img/food.png');
@@ -10,14 +10,12 @@ const dummyProfileImage = require('../assets/img/profile.jpg');
 
 const HomeScreen = ({ navigation }) => {
     const [foods, setFoods] = useState([]);
-    const [profileImage, setProfileImage] = useState(dummyProfileImage);
+    const [profileImage] = useState(dummyProfileImage);
     const [loading, setLoading] = useState(true);
     const [sortByPriceAsc, setSortByPriceAsc] = useState(false);
     const [sortByPriceDesc, setSortByPriceDesc] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredFoods, setFilteredFoods] = useState([]);
-    const [fabVisible, setFabVisible] = useState(true);
-    const animatedValue = new Animated.Value(0);
     const [modalVisible, setModalVisible] = useState(false);
 
     const firestore = getFirestore();
@@ -97,25 +95,12 @@ const HomeScreen = ({ navigation }) => {
         navigation.navigate('OrderHistory');
     };
 
-    const toggleFabVisibility = () => {
-        setFabVisible(!fabVisible);
-    };
-
     const clearFilters = () => {
         setSortByPriceAsc(false);
         setSortByPriceDesc(false);
         setSearchQuery('');
         fetchFoods();
     };
-
-    useEffect(() => {
-        Animated.timing(animatedValue, {
-            toValue: fabVisible ? 0 : 1,
-            duration: 300,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true
-        }).start();
-    }, [fabVisible, animatedValue]);
 
     // Render each food item
     const renderFoodItem = ({ item }) => (
@@ -190,29 +175,6 @@ const HomeScreen = ({ navigation }) => {
                     <Image source={profileImage} style={styles.profileImage} />
                 </TouchableOpacity>
             </View>
-
-            {/* Floating Action Button */}
-            <Animated.View
-                style={[
-                    styles.fabContainer,
-                    {
-                        transform: [
-                            {
-                                translateY: animatedValue.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [0, 100]
-                                })
-                            }
-                        ]
-                    }
-                ]}
-            >
-                <FAB
-                    icon="plus"
-                    style={styles.fab}
-                    onPress={navigateToAddFood}
-                />
-            </Animated.View>
 
             {/* Sorting Modal */}
             <Modal
@@ -350,14 +312,6 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 15,
-    },
-    fabContainer: {
-        position: 'absolute',
-        right: 16,
-        bottom: 16,
-    },
-    fab: {
-        backgroundColor: '#6200EE',
     },
     modalContainer: {
         flex: 1,
