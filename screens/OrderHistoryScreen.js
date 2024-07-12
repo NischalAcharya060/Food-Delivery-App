@@ -10,7 +10,7 @@ const OrderHistoryScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredOrders, setFilteredOrders] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
-    const [filterStatus, setFilterStatus] = useState('All');
+    const [filterStatus, setFilterStatus] = useState('All'); // Default filter status
     const auth = getAuth();
     const firestore = getFirestore();
 
@@ -30,7 +30,7 @@ const OrderHistoryScreen = () => {
                 fetchedOrders.push({ id: doc.id, ...doc.data() });
             });
             setOrders(fetchedOrders);
-            setFilteredOrders(fetchedOrders);
+            setFilteredOrders(fetchedOrders); // Initially set all orders as filtered orders
         } catch (error) {
             console.error('Error fetching orders:', error);
         } finally {
@@ -50,9 +50,13 @@ const OrderHistoryScreen = () => {
 
     const filterAndSortOrders = (query, status) => {
         let updatedOrders = orders;
+
+        // Filter by status
         if (status !== 'All') {
             updatedOrders = updatedOrders.filter(order => order.status === status);
         }
+
+        // Filter by search query
         if (query) {
             updatedOrders = updatedOrders.filter(order =>
                 order.items.some(item =>
@@ -60,6 +64,7 @@ const OrderHistoryScreen = () => {
                 )
             );
         }
+
         setFilteredOrders(updatedOrders);
     };
 
@@ -81,10 +86,29 @@ const OrderHistoryScreen = () => {
                     </View>
                 ))}
                 <View style={styles.separator} />
-                <Text style={styles.statusBadge}>{item.status}</Text>
+                <Text style={[styles.statusBadge, getStatusStyle(item.status)]}>{item.status}</Text>
             </Card.Content>
         </Card>
     );
+
+    // Function to set style based on order status
+    const getStatusStyle = (status) => {
+        let color = '#333'; // Default color
+        switch (status) {
+            case 'Delivered':
+                color = '#28a745'; // Green for delivered
+                break;
+            case 'Pending':
+                color = '#ffc107'; // Yellow for pending
+                break;
+            case 'Cancelled':
+                color = '#dc3545'; // Red for cancelled
+                break;
+            default:
+                color = '#333'; // Default color for other cases
+        }
+        return { backgroundColor: color };
+    };
 
     return (
         <View style={styles.container}>
@@ -101,7 +125,7 @@ const OrderHistoryScreen = () => {
                         key={status}
                         selected={filterStatus === status}
                         onPress={() => handleFilter(status)}
-                        style={styles.chip}
+                        style={[styles.chip, filterStatus === status && { backgroundColor: '#6200EE' }]}
                     >
                         {status}
                     </Chip>
@@ -146,6 +170,8 @@ const styles = StyleSheet.create({
     },
     chip: {
         color: '#fff',
+        backgroundColor: '#999',
+        marginHorizontal: 5,
     },
     card: {
         marginBottom: 15,
