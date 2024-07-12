@@ -1,34 +1,66 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
-import Icon from "react-native-vector-icons/Ionicons";
+import Icon from 'react-native-vector-icons/Ionicons';
 import { db, auth } from '../firebase/firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
+import { useStripe } from '@stripe/stripe-react-native';
+import axios from 'axios';
 
 const FoodDetailScreen = ({ route }) => {
     const { food } = route.params;
     const [quantity, setQuantity] = useState(1);
+    const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
+    const fetchPaymentIntentClientSecret = async () => {
+        try {
+            const response = await axios.post('https://e7aa-27-34-80-142.ngrok-free.app/create-payment-intent', {
+                amount: food.price * quantity * 100, // amount in cents
+            });
+            const { clientSecret } = response.data;
+            return clientSecret;
+        } catch (error) {
+            console.error('Error fetching payment intent:', error);
+            throw new Error('Failed to fetch payment intent.');
+        }
+    };
+
+    // Handles the buy food action
     const handleBuyFood = async () => {
         const user = auth.currentUser;
         if (user) {
             try {
-                const orderId = `order_${new Date().getTime()}`;
-                const orderDoc = doc(db, 'orders', orderId);
-                await setDoc(orderDoc, {
-                    userId: user.uid,
-                    date: new Date().toISOString(),
-                    total: food.price * quantity,
-                    items: [
-                        {
-                            name: food.name,
-                            price: food.price,
-                            quantity: quantity
-                        }
-                    ]
+                const clientSecret = await fetchPaymentIntentClientSecret();
+                const { error } = await initPaymentSheet({
+                    paymentIntentClientSecret: clientSecret,
+                    returnURL: 'https://aacharyanischal.com/payment-complete',
                 });
-                Alert.alert('Success', `You have bought ${quantity} ${food.name}(s) for Rs. ${food.price * quantity}`);
+                if (!error) {
+                    const { error: paymentError } = await presentPaymentSheet();
+                    if (!paymentError) {
+                        const orderId = `order_${new Date().getTime()}`;
+                        const orderDoc = doc(db, 'orders', orderId);
+                        await setDoc(orderDoc, {
+                            userId: user.uid,
+                            date: new Date().toISOString(),
+                            total: food.price * quantity,
+                            items: [
+                                {
+                                    name: food.name,
+                                    price: food.price,
+                                    quantity: quantity,
+                                },
+                            ],
+                            status: 'payment complete',
+                        });
+                        Alert.alert('Success', `You have bought ${quantity} ${food.name}(s) for Rs. ${food.price * quantity}`);
+                    } else {
+                        Alert.alert('Error', 'There was an error processing your payment. Please try again.');
+                    }
+                } else {
+                    Alert.alert('Error', 'There was an error initializing the payment sheet. Please try again.');
+                }
             } catch (error) {
-                console.error("Error adding order: ", error);
+                console.error('Error adding order: ', error);
                 Alert.alert('Error', 'There was an error processing your order. Please try again.');
             }
         } else {
@@ -38,20 +70,17 @@ const FoodDetailScreen = ({ route }) => {
 
     return (
         <View style={styles.container}>
-            {/* Food Image */}
             <Image
                 source={food.image ? { uri: food.image } : require('../assets/img/food.png')}
                 style={styles.foodImage}
                 resizeMode="cover"
             />
 
-            {/* Food Details */}
             <View style={styles.detailsContainer}>
                 <Text style={styles.foodName}>{food.name}</Text>
                 <Text style={styles.foodPrice}>Rs. {food.price}</Text>
                 <Text style={styles.foodDescription}>{food.description}</Text>
 
-                {/* Quantity Selector */}
                 <View style={styles.quantityContainer}>
                     <Text style={styles.quantityLabel}>Quantity:</Text>
                     <View style={styles.quantityButtons}>
@@ -106,11 +135,6 @@ const styles = StyleSheet.create({
     foodDescription: {
         fontSize: 16,
         color: '#555',
-        marginBottom: 15,
-    },
-    restaurantName: {
-        fontSize: 16,
-        color: '#777',
         marginBottom: 15,
     },
     quantityContainer: {
