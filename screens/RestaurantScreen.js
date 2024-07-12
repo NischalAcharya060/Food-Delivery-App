@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MapView, { Marker, UrlTile } from 'react-native-maps';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
@@ -12,6 +12,7 @@ const RestaurantScreen = ({ navigation }) => {
     const [cuisine, setCuisine] = useState('');
     const [description, setDescription] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [addressLoading, setAddressLoading] = useState(false);
     const [coordinates, setCoordinates] = useState({ latitude: 37.7749, longitude: -122.4194 });
 
     const firestore = getFirestore();
@@ -19,6 +20,11 @@ const RestaurantScreen = ({ navigation }) => {
     const handleAddRestaurant = async () => {
         if (name === '' || address === '' || phone === '' || cuisine === '' || description === '') {
             Alert.alert('Error', 'Please fill out all fields.');
+            return;
+        }
+
+        if (!/^\d+$/.test(phone)) {
+            Alert.alert('Error', 'Please enter a valid phone number.');
             return;
         }
 
@@ -52,12 +58,15 @@ const RestaurantScreen = ({ navigation }) => {
         const fetchCoordinates = async () => {
             if (address !== '') {
                 try {
+                    setAddressLoading(true);
                     let response = await Location.geocodeAsync(address);
                     if (response.length > 0) {
                         setCoordinates({ latitude: response[0].latitude, longitude: response[0].longitude });
                     }
                 } catch (error) {
                     console.error('Error fetching coordinates:', error);
+                } finally {
+                    setAddressLoading(false);
                 }
             }
         };
@@ -101,6 +110,7 @@ const RestaurantScreen = ({ navigation }) => {
                         value={address}
                         onChangeText={setAddress}
                     />
+                    {addressLoading && <ActivityIndicator size="small" color="#007bff" style={styles.addressLoading} />}
                 </View>
                 <View style={styles.inputContainer}>
                     <Icon name="call-outline" size={24} color="#333" style={styles.icon} />
@@ -128,6 +138,7 @@ const RestaurantScreen = ({ navigation }) => {
                         placeholder="Description"
                         value={description}
                         onChangeText={setDescription}
+                        multiline
                     />
                 </View>
 
@@ -136,6 +147,7 @@ const RestaurantScreen = ({ navigation }) => {
                     onPress={handleAddRestaurant}
                     disabled={isLoading}
                 >
+                    <Icon name="add-circle-outline" size={24} color="#fff" style={styles.buttonIcon} />
                     <Text style={styles.buttonText}>{isLoading ? 'Adding...' : 'Add Restaurant'}</Text>
                 </TouchableOpacity>
             </View>
@@ -149,20 +161,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f8f9fa',
         paddingVertical: 20,
     },
-    header: {
-        backgroundColor: '#fff',
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
-    },
-    headerText: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-    },
     content: {
-        flex: 1,
         paddingHorizontal: 20,
         paddingVertical: 30,
         alignItems: 'center',
@@ -174,6 +173,14 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#ddd',
         width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 1.41,
+        elevation: 2,
+        padding: 10,
     },
     icon: {
         marginRight: 10,
@@ -184,12 +191,16 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#333',
     },
+    addressLoading: {
+        marginLeft: 10,
+    },
     button: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: '#007bff',
         height: 50,
         borderRadius: 8,
         justifyContent: 'center',
-        alignItems: 'center',
         marginTop: 20,
         width: '100%',
     },
@@ -199,6 +210,10 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: 18,
+        marginLeft: 10,
+    },
+    buttonIcon: {
+        marginRight: 10,
     },
     map: {
         height: 200,

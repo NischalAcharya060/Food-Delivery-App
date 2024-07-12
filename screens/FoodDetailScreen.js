@@ -72,6 +72,7 @@ const FoodDetailScreen = ({ route }) => {
                 </View>
 
                 <TouchableOpacity style={styles.buyButton} onPress={handleBuyFood}>
+                    <Icon name="cart-outline" size={20} color="#fff" />
                     <Text style={styles.buyButtonText}>Buy Now</Text>
                 </TouchableOpacity>
             </View>
@@ -139,12 +140,16 @@ const styles = StyleSheet.create({
     buyButton: {
         backgroundColor: '#6200EE',
         paddingVertical: 12,
+        paddingHorizontal: 10,
         borderRadius: 5,
         alignItems: 'center',
+        flexDirection: 'row',
     },
     buyButtonText: {
         color: '#fff',
         fontSize: 18,
+        marginLeft: 5,
+        textAlign: 'center',
     },
 });
 

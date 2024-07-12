@@ -114,6 +114,7 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.foodName}>{item.name}</Text>
                 <Text style={styles.foodPrice}>Rs. {item.price}</Text>
                 <TouchableOpacity style={styles.buyButton} onPress={() => handleBuyFood(item)}>
+                    <Icon name="cart-outline" size={20} color="#fff" />
                     <Text style={styles.buyButtonText}>Buy</Text>
                 </TouchableOpacity>
             </View>
@@ -137,7 +138,8 @@ const HomeScreen = ({ navigation }) => {
 
             {/* Clear Filters Button */}
             <Button mode="contained" onPress={clearFilters} style={styles.clearButton}>
-                Clear Filters
+                <Icon name="close-circle-outline" size={20} color="#fff" />
+                <Text style={styles.clearButtonText}>Clear Filters</Text>
             </Button>
 
             {/* Main Content */}
@@ -242,6 +244,12 @@ const styles = StyleSheet.create({
     },
     clearButton: {
         marginVertical: 10,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    clearButtonText: {
+        marginRight: 5,
     },
     loadingContainer: {
         flex: 1,
@@ -275,12 +283,15 @@ const styles = StyleSheet.create({
     buyButton: {
         backgroundColor: '#6200EE',
         paddingVertical: 5,
+        paddingHorizontal: 10,
         borderRadius: 5,
         alignItems: 'center',
+        flexDirection: 'row',
     },
     buyButtonText: {
         color: '#fff',
         fontSize: 14,
+        marginLeft: 5,
     },
     emptyText: {
         textAlign: 'center',

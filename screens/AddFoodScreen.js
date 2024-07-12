@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { getFirestore, collection, getDocs, addDoc } from 'firebase/firestore';
 
@@ -32,11 +32,7 @@ const AddFoodScreen = ({ navigation }) => {
     }, []);
 
     const handleRestaurantSelect = (restaurantId) => {
-        if (selectedRestaurant === restaurantId) {
-            setSelectedRestaurant(null);
-        } else {
-            setSelectedRestaurant(restaurantId);
-        }
+        setSelectedRestaurant(prev => (prev === restaurantId ? null : restaurantId));
     };
 
     const handleAddFood = async () => {
@@ -68,58 +64,65 @@ const AddFoodScreen = ({ navigation }) => {
         }
     };
 
-    return (
-        <View style={styles.container}>
-            <View style={styles.content}>
-                <View style={styles.inputContainer}>
-                    <Icon name="fast-food-outline" size={24} color="#333" style={styles.icon} />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Food Name"
-                        value={name}
-                        onChangeText={setName}
-                    />
-                </View>
-                <View style={styles.inputContainer}>
-                    <Icon name="pricetag-outline" size={24} color="#333" style={styles.icon} />
-                    <Text style={styles.currencyPrefix}>NPR</Text>
-                    <TextInput
-                        style={[styles.input, { flex: 1 }]}
-                        placeholder="Price"
-                        value={price}
-                        onChangeText={setPrice}
-                        keyboardType="numeric"
-                    />
-                </View>
-                <View style={styles.checkboxContainer}>
-                    <Text style={styles.checkboxLabel}>Select Restaurant:</Text>
-                    {restaurants.map(rest => (
-                        <TouchableOpacity
-                            key={rest.id}
-                            style={[styles.checkbox, selectedRestaurant === rest.id && styles.checkboxSelected]}
-                            onPress={() => handleRestaurantSelect(rest.id)}
-                        >
-                            <View style={styles.checkboxContent}>
-                                {selectedRestaurant === rest.id && (
-                                    <Icon name="checkmark" size={16} color="#fff" style={styles.checkboxIcon} />
-                                )}
-                                <Text style={[styles.checkboxText, selectedRestaurant === rest.id && styles.checkboxTextSelected]}>
-                                    {rest.name}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-                <View style={styles.inputContainer}>
-                    <Icon name="document-text-outline" size={24} color="#333" style={styles.icon} />
-                    <TextInput
-                        style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
-                        placeholder="Description"
-                        value={description}
-                        onChangeText={setDescription}
-                    />
-                </View>
+    const handleClear = () => {
+        setName('');
+        setPrice('');
+        setSelectedRestaurant(null);
+        setDescription('');
+    };
 
+    return (
+        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+            <Text style={styles.headerText}>Add Food</Text>
+            <View style={styles.inputContainer}>
+                <Icon name="fast-food-outline" size={24} color="#333" style={styles.icon} />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Food Name"
+                    value={name}
+                    onChangeText={setName}
+                />
+            </View>
+            <View style={styles.inputContainer}>
+                <Icon name="pricetag-outline" size={24} color="#333" style={styles.icon} />
+                <Text style={styles.currencyPrefix}>NPR</Text>
+                <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    placeholder="Price"
+                    value={price}
+                    onChangeText={setPrice}
+                    keyboardType="numeric"
+                />
+            </View>
+            <View style={styles.checkboxContainer}>
+                <Text style={styles.checkboxLabel}>Select Restaurant:</Text>
+                {restaurants.map(rest => (
+                    <TouchableOpacity
+                        key={rest.id}
+                        style={[styles.checkbox, selectedRestaurant === rest.id && styles.checkboxSelected]}
+                        onPress={() => handleRestaurantSelect(rest.id)}
+                    >
+                        <View style={styles.checkboxContent}>
+                            {selectedRestaurant === rest.id && (
+                                <Icon name="checkmark" size={16} color="#fff" style={styles.checkboxIcon} />
+                            )}
+                            <Text style={[styles.checkboxText, selectedRestaurant === rest.id && styles.checkboxTextSelected]}>
+                                {rest.name}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                ))}
+            </View>
+            <View style={[styles.inputContainer, { height: 100 }]}>
+                <Icon name="document-text-outline" size={24} color="#333" style={styles.icon} />
+                <TextInput
+                    style={[styles.input, { height: '100%', textAlignVertical: 'top' }]}
+                    placeholder="Description"
+                    value={description}
+                    onChangeText={setDescription}
+                />
+            </View>
+            <View style={styles.buttonContainer}>
                 <TouchableOpacity
                     style={[styles.button, isLoading && styles.buttonDisabled]}
                     onPress={handleAddFood}
@@ -128,11 +131,18 @@ const AddFoodScreen = ({ navigation }) => {
                     {isLoading ? (
                         <ActivityIndicator size="small" color="#fff" />
                     ) : (
-                        <Text style={styles.buttonText}>Add Food</Text>
+                        <>
+                            <Icon name="add-circle-outline" size={24} color="#fff" style={styles.buttonIcon} />
+                            <Text style={styles.buttonText}>Add Food</Text>
+                        </>
                     )}
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
+                    <Icon name="close-circle-outline" size={24} color="#333" style={styles.buttonIcon} />
+                    <Text style={styles.clearButtonText}>Clear</Text>
+                </TouchableOpacity>
             </View>
-        </View>
+        </ScrollView>
     );
 };
 
@@ -141,23 +151,15 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f8f9fa',
     },
-    header: {
-        backgroundColor: '#fff',
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
+    contentContainer: {
+        padding: 20,
     },
     headerText: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#007bff',
         textAlign: 'center',
-    },
-    content: {
-        flex: 1,
-        paddingHorizontal: 20,
-        paddingVertical: 30,
+        marginBottom: 20,
     },
     inputContainer: {
         flexDirection: 'row',
@@ -199,6 +201,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginBottom: 10,
         marginLeft: 10,
+        color: '#333',
     },
     checkbox: {
         flexDirection: 'row',
@@ -210,6 +213,14 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#007bff',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
     },
     checkboxSelected: {
         backgroundColor: '#007bff',
@@ -230,13 +241,20 @@ const styles = StyleSheet.create({
     checkboxTextSelected: {
         color: '#fff',
     },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
     button: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: '#007bff',
         height: 50,
         borderRadius: 8,
         justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 20,
+        flex: 1,
+        marginRight: 10,
     },
     buttonDisabled: {
         backgroundColor: '#b5c0c6',
@@ -244,6 +262,24 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: 18,
+        marginLeft: 10,
+    },
+    buttonIcon: {
+        marginRight: 10,
+    },
+    clearButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ddd',
+        height: 50,
+        borderRadius: 8,
+        justifyContent: 'center',
+        flex: 1,
+    },
+    clearButtonText: {
+        color: '#333',
+        fontSize: 18,
+        marginLeft: 10,
     },
 });
 
