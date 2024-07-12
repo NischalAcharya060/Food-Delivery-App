@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { getAuth, updateProfile, signOut } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
@@ -184,13 +184,21 @@ const ProfileScreen = ({ navigation }) => {
                     onPress={handleSaveProfile}
                     disabled={isLoading}
                 >
-                    <Text style={styles.buttonText}>{isLoading ? 'Updating...' : 'Update Profile'}</Text>
+                    {isLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                        <>
+                            <Icon name="save-outline" size={20} color="#fff" style={styles.buttonIcon} />
+                            <Text style={styles.buttonText}>Update Profile</Text>
+                        </>
+                    )}
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     style={styles.logoutButton}
                     onPress={handleLogout}
                 >
+                    <Icon name="log-out-outline" size={20} color="#dc3545" style={styles.buttonIcon} />
                     <Text style={styles.logoutButtonText}>Logout</Text>
                 </TouchableOpacity>
             </View>
@@ -234,6 +242,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 20,
         width: '100%',
+        flexDirection: 'row',
     },
     buttonDisabled: {
         backgroundColor: '#b5c0c6',
@@ -242,12 +251,18 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 18,
     },
+    buttonIcon: {
+        marginRight: 10,
+    },
     logoutButton: {
         marginTop: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     logoutButtonText: {
         color: '#dc3545',
         fontSize: 16,
+        marginLeft: 5,
     },
     map: {
         height: 200,
