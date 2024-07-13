@@ -37,7 +37,7 @@ const SignIn = ({ navigation, route }) => {
         <View style={styles.container}>
             <Image source={LogoImage} style={styles.logo} resizeMode="contain" />
 
-            <Text style={styles.title}>Login</Text>
+            <Text style={styles.title}>Login to Your Account</Text>
             {showSuccessPopup && (
                 <Animated.View style={[styles.successPopup, { opacity: 1 }]}>
                     <Text style={styles.successText}>{successMessage}</Text>
@@ -45,7 +45,7 @@ const SignIn = ({ navigation, route }) => {
             )}
             <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder="Email Address"
                 value={email}
                 onChangeText={(text) => setEmail(text)}
                 keyboardType="email-address"
@@ -76,7 +76,7 @@ const SignIn = ({ navigation, route }) => {
                 <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.signupText}>Don't have an account? Register</Text>
+                <Text style={styles.signupText}>Don't have an account? Register Here</Text>
             </TouchableOpacity>
         </View>
     );
@@ -96,9 +96,11 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     title: {
-        fontSize: 28,
+        fontSize: 24,
         marginBottom: 20,
         color: '#333',
+        textAlign: 'center',
+        fontWeight: 'bold',
     },
     input: {
         width: '100%',
@@ -115,6 +117,7 @@ const styles = StyleSheet.create({
         width: '100%',
         flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 15,
     },
     eyeIcon: {
         position: 'absolute',
@@ -124,18 +127,21 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 20,
         right: 20,
-        backgroundColor: 'green',
-        padding: 10,
+        backgroundColor: '#28a745',
+        paddingVertical: 8,
+        paddingHorizontal: 15,
         borderRadius: 5,
         elevation: 5,
     },
     successText: {
         color: '#fff',
         fontSize: 16,
+        textAlign: 'center',
     },
     errorText: {
         color: 'red',
         marginBottom: 10,
+        textAlign: 'center',
     },
     button: {
         width: '100%',
@@ -149,11 +155,13 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: 18,
+        fontWeight: 'bold',
     },
     signupText: {
         marginTop: 20,
-        color: '#0c0909',
-        textDecorationLine: 'none',
+        color: '#007bff',
+        textDecorationLine: 'underline',
+        fontSize: 16,
     },
 });
 

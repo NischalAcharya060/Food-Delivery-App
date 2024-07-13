@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, TextInput, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { auth } from '../firebase/firebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -11,8 +11,12 @@ const SignUp = ({ navigation }) => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const handleSignUp = () => {
+        if (loading) return;
+        setLoading(true);
+
         createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user;
@@ -21,17 +25,18 @@ const SignUp = ({ navigation }) => {
             })
             .catch((error) => {
                 setError(error.message);
-            });
+            })
+            .finally(() => setLoading(false));
     };
 
     return (
         <View style={styles.container}>
             <Image source={LogoImage} style={styles.logo} resizeMode="contain" />
 
-            <Text style={styles.title}>Register</Text>
+            <Text style={styles.title}>Create an Account</Text>
             <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder="Email Address"
                 value={email}
                 onChangeText={(text) => setEmail(text)}
                 keyboardType="email-address"
@@ -58,11 +63,19 @@ const SignUp = ({ navigation }) => {
                 </TouchableOpacity>
             </View>
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
-            <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-                <Text style={styles.buttonText}>Register</Text>
+            <TouchableOpacity
+                style={styles.button}
+                onPress={handleSignUp}
+                disabled={loading} // Disable button while loading
+            >
+                {loading ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={styles.buttonText}>Register</Text>
+                )}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.signinText}>Already have an account? Login</Text>
+                <Text style={styles.signinText}>Already have an account? Login Here</Text>
             </TouchableOpacity>
         </View>
     );
@@ -82,9 +95,11 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     title: {
-        fontSize: 28,
+        fontSize: 24,
         marginBottom: 20,
         color: '#333',
+        textAlign: 'center',
+        fontWeight: 'bold',
     },
     input: {
         width: '100%',
@@ -101,6 +116,7 @@ const styles = StyleSheet.create({
         width: '100%',
         flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 15,
     },
     eyeIcon: {
         position: 'absolute',
@@ -109,6 +125,7 @@ const styles = StyleSheet.create({
     errorText: {
         color: 'red',
         marginBottom: 10,
+        textAlign: 'center',
     },
     button: {
         width: '100%',
@@ -122,11 +139,13 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: 18,
+        fontWeight: 'bold',
     },
     signinText: {
         marginTop: 20,
-        color: '#0c0909',
-        textDecorationLine: 'none',
+        color: '#007bff',
+        textDecorationLine: 'underline',
+        fontSize: 16,
     },
 });
 
