@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { db, auth } from '../firebase/firebaseConfig';
@@ -12,6 +12,8 @@ const FoodDetailScreen = ({ route }) => {
     const [quantity, setQuantity] = useState(1);
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
     const navigation = useNavigation();
+    const [loading, setLoading] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState('online');
 
     const fetchPaymentIntentClientSecret = async () => {
         try {
@@ -30,43 +32,59 @@ const FoodDetailScreen = ({ route }) => {
         const user = auth.currentUser;
         if (user) {
             try {
-                const clientSecret = await fetchPaymentIntentClientSecret();
-                const { error } = await initPaymentSheet({
-                    paymentIntentClientSecret: clientSecret,
-                    returnURL: 'https://aacharyanischal.com/payment-complete',
-                });
-                if (!error) {
-                    const { error: paymentError } = await presentPaymentSheet();
-                    if (!paymentError) {
-                        const orderId = `order_${new Date().getTime()}`;
-                        const orderDoc = doc(db, 'orders', orderId);
-                        await setDoc(orderDoc, {
-                            userId: user.uid,
-                            date: new Date().toISOString(),
-                            total: food.price * quantity,
-                            items: [
-                                {
-                                    name: food.name,
-                                    price: food.price,
-                                    quantity: quantity,
-                                },
-                            ],
-                            status: 'payment complete',
-                        });
-                        Alert.alert('Success', `You have bought ${quantity} ${food.name}(s) for Rs. ${food.price * quantity}`);
-                        navigation.navigate('PaymentSuccess');  // Navigate to PaymentSuccess screen
+                setLoading(true);
+                if (paymentMethod === 'online') {
+                    const clientSecret = await fetchPaymentIntentClientSecret();
+                    const { error } = await initPaymentSheet({
+                        paymentIntentClientSecret: clientSecret,
+                        returnURL: 'https://aacharyanischal.com/payment-complete',
+                    });
+                    if (!error) {
+                        const { error: paymentError } = await presentPaymentSheet();
+                        if (!paymentError) {
+                            await saveOrder('payment complete');
+                        } else {
+                            Alert.alert('Error', 'There was an error processing your payment. Please try again.');
+                        }
                     } else {
-                        Alert.alert('Error', 'There was an error processing your payment. Please try again.');
+                        Alert.alert('Error', 'There was an error initializing the payment sheet. Please try again.');
                     }
                 } else {
-                    Alert.alert('Error', 'There was an error initializing the payment sheet. Please try again.');
+                    await saveOrder('pending');
                 }
             } catch (error) {
                 console.error('Error adding order: ', error);
                 Alert.alert('Error', 'There was an error processing your order. Please try again.');
+            } finally {
+                setLoading(false);
             }
         } else {
             Alert.alert('Error', 'You need to be logged in to place an order.');
+        }
+    };
+
+    const saveOrder = async (status) => {
+        try {
+            const orderId = `order_${new Date().getTime()}`;
+            const orderDoc = doc(db, 'orders', orderId);
+            await setDoc(orderDoc, {
+                userId: auth.currentUser.uid,
+                date: new Date().toISOString(),
+                total: food.price * quantity,
+                items: [
+                    {
+                        name: food.name,
+                        price: food.price,
+                        quantity: quantity,
+                    },
+                ],
+                status: status,
+            });
+            Alert.alert('Success', `You have bought ${quantity} ${food.name}(s) for Rs. ${food.price * quantity}`);
+            navigation.navigate('PaymentSuccess');
+        } catch (error) {
+            console.error('Error saving order: ', error);
+            Alert.alert('Error', 'There was an error saving your order. Please try again.');
         }
     };
 
@@ -76,6 +94,7 @@ const FoodDetailScreen = ({ route }) => {
                 source={food.image ? { uri: food.image } : require('../assets/img/food.png')}
                 style={styles.foodImage}
                 resizeMode="cover"
+                PlaceholderContent={<ActivityIndicator />}
             />
 
             <View style={styles.detailsContainer}>
@@ -89,6 +108,7 @@ const FoodDetailScreen = ({ route }) => {
                         <TouchableOpacity
                             style={styles.quantityButton}
                             onPress={() => setQuantity(quantity > 1 ? quantity - 1 : 1)}
+                            disabled={loading}
                         >
                             <Icon name="remove-outline" size={20} color="#6200EE" />
                         </TouchableOpacity>
@@ -96,15 +116,39 @@ const FoodDetailScreen = ({ route }) => {
                         <TouchableOpacity
                             style={styles.quantityButton}
                             onPress={() => setQuantity(quantity + 1)}
+                            disabled={loading}
                         >
                             <Icon name="add-outline" size={20} color="#6200EE" />
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                <TouchableOpacity style={styles.buyButton} onPress={handleBuyFood}>
-                    <Icon name="cart-outline" size={20} color="#fff" />
-                    <Text style={styles.buyButtonText}>Buy Now</Text>
+                <View style={styles.paymentOptions}>
+                    <TouchableOpacity
+                        style={[styles.paymentOptionButton, paymentMethod === 'online' && styles.activePaymentOption]}
+                        onPress={() => setPaymentMethod('online')}
+                    >
+                        <Icon name="logo-skype" size={20} color={paymentMethod === 'online' ? '#ffffff' : '#6200EE'} />
+                        <Text style={[styles.paymentOptionText, paymentMethod === 'online' && styles.activePaymentOptiontext]}> Pay Online</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.paymentOptionButton, paymentMethod === 'cod' && styles.activePaymentOption]}
+                        onPress={() => setPaymentMethod('cod')}
+                    >
+                        <Icon name="cash" size={20} color={paymentMethod === 'cod' ? '#ffffff' : '#6200EE'} />
+                        <Text style={[styles.paymentOptionText, paymentMethod === 'cod' && styles.activePaymentOptiontext]}> Cash On Delivery</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={styles.buyButton} onPress={handleBuyFood} disabled={loading}>
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <>
+                            <Icon name="cart-outline" size={20} color="#fff" />
+                            <Text style={styles.buyButtonText}> Buy Now</Text>
+                        </>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>
@@ -163,6 +207,30 @@ const styles = StyleSheet.create({
         marginHorizontal: 10,
         color: '#333',
     },
+    paymentOptions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 20,
+    },
+    paymentOptionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: '#6200EE',
+    },
+    paymentOptionText: {
+        color: '#6200EE',
+        fontSize: 16,
+    },
+    activePaymentOption: {
+        backgroundColor: '#6200EE',
+    },
+    activePaymentOptiontext: {
+        color: '#ffffff',
+    },
     buyButton: {
         backgroundColor: '#6200EE',
         paddingVertical: 12,
@@ -170,6 +238,8 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         alignItems: 'center',
         flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 20,
     },
     buyButtonText: {
         color: '#fff',
