@@ -12,6 +12,7 @@ const SignUp = ({ navigation }) => {
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [passwordStrengthColor, setPasswordStrengthColor] = useState('#ddd');
 
     const handleSignUp = () => {
         if (loading) return;
@@ -27,6 +28,24 @@ const SignUp = ({ navigation }) => {
                 setError(error.message);
             })
             .finally(() => setLoading(false));
+    };
+
+    const evaluatePasswordStrength = (password) => {
+        const lengthCriteria = password.length >= 8;
+
+        if (lengthCriteria) {
+            return 'green';
+        } else if (password.length >= 5) {
+            return 'orange';
+        } else {
+            return 'red';
+        }
+    };
+
+    const handlePasswordChange = (password) => {
+        setPassword(password);
+        const strengthColor = evaluatePasswordStrength(password);
+        setPasswordStrengthColor(strengthColor);
     };
 
     return (
@@ -46,10 +65,10 @@ const SignUp = ({ navigation }) => {
             />
             <View style={styles.passwordContainer}>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { borderColor: passwordStrengthColor }]}
                     placeholder="Password"
                     value={password}
-                    onChangeText={(text) => setPassword(text)}
+                    onChangeText={handlePasswordChange}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoCompleteType="password"
@@ -84,10 +103,11 @@ const SignUp = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         alignItems: 'center',
         paddingHorizontal: 20,
         backgroundColor: '#f8f9fa',
+        paddingTop: 40,
     },
     logo: {
         width: 150,
@@ -108,7 +128,6 @@ const styles = StyleSheet.create({
     input: {
         width: '100%',
         height: 50,
-        borderColor: '#ddd',
         borderWidth: 1,
         borderRadius: 8,
         paddingHorizontal: 15,

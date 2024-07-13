@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, TextInput, Text, StyleSheet, TouchableOpacity, Animated, Image } from 'react-native';
 import { auth } from '../firebase/firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -12,14 +12,29 @@ const SignIn = ({ navigation, route }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         if (route.params?.successMessage) {
             setSuccessMessage(route.params.successMessage);
-            setShowSuccessPopup(true); // Show popup on success message
-            setTimeout(() => setShowSuccessPopup(false), 3000); // Auto hide after 3 seconds
+            setShowSuccessPopup(true);
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+            }).start(() => {
+                setTimeout(() => {
+                    Animated.timing(fadeAnim, {
+                        toValue: 0,
+                        duration: 500,
+                        useNativeDriver: true,
+                    }).start(() => {
+                        setShowSuccessPopup(false);
+                    });
+                }, 3000); // Auto hide after 3 seconds
+            });
         }
-    }, [route.params?.successMessage]);
+    }, [route.params?.successMessage, fadeAnim]);
 
     const handleSignIn = () => {
         signInWithEmailAndPassword(auth, email, password)
@@ -39,7 +54,7 @@ const SignIn = ({ navigation, route }) => {
 
             <Text style={styles.title}>Login to Your Account</Text>
             {showSuccessPopup && (
-                <Animated.View style={[styles.successPopup, { opacity: 1 }]}>
+                <Animated.View style={[styles.successPopup, { opacity: fadeAnim }]}>
                     <Text style={styles.successText}>{successMessage}</Text>
                 </Animated.View>
             )}
@@ -85,10 +100,11 @@ const SignIn = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         alignItems: 'center',
         paddingHorizontal: 20,
         backgroundColor: '#f8f9fa',
+        paddingTop: 40,
     },
     logo: {
         width: 150,
