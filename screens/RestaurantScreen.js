@@ -134,7 +134,7 @@ const RestaurantScreen = ({ navigation }) => {
                 <View style={styles.inputContainer}>
                     <Icon name="document-text-outline" size={24} color="#333" style={styles.icon} />
                     <TextInput
-                        style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+                        style={[styles.input, styles.descriptionInput]}
                         placeholder="Description"
                         value={description}
                         onChangeText={setDescription}
@@ -180,7 +180,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 1.41,
         elevation: 2,
-        padding: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
     },
     icon: {
         marginRight: 10,
@@ -190,6 +191,10 @@ const styles = StyleSheet.create({
         height: 40,
         fontSize: 16,
         color: '#333',
+    },
+    descriptionInput: {
+        height: 80,
+        textAlignVertical: 'top',
     },
     addressLoading: {
         marginLeft: 10,
@@ -219,6 +224,8 @@ const styles = StyleSheet.create({
         height: 200,
         width: '100%',
         marginBottom: 20,
+        borderRadius: 8,
+        overflow: 'hidden',
     },
 });
 

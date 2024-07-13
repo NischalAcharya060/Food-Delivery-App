@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Animated, Modal } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Modal, SafeAreaView } from 'react-native';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
 import { Searchbar, Button, Checkbox } from 'react-native-paper';
 import Icon from "react-native-vector-icons/Ionicons";
 
-const dummyFoodImage = require('../assets/img/food.png');
+const dummyFoodImage = require('../assets/img/food.jpg');
 const dummyProfileImage = require('../assets/img/profile.jpg');
 
 const HomeScreen = ({ navigation }) => {
@@ -20,7 +20,6 @@ const HomeScreen = ({ navigation }) => {
 
     const firestore = getFirestore();
 
-    // Function to fetch foods
     const fetchFoods = async () => {
         setLoading(true);
         try {
@@ -40,7 +39,6 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
-    // Function to apply filters and sorting
     const applyFilters = (foodList) => {
         let filtered = foodList;
 
@@ -59,7 +57,6 @@ const HomeScreen = ({ navigation }) => {
         setFilteredFoods(filtered);
     };
 
-    // Fetch foods on initial load and when sort or search query changes
     useFocusEffect(
         React.useCallback(() => {
             fetchFoods();
@@ -70,27 +67,22 @@ const HomeScreen = ({ navigation }) => {
         setSearchQuery(query);
     };
 
-    // Navigate to food detail screen
     const handleBuyFood = (food) => {
         navigation.navigate('FoodDetail', { food });
     };
 
-    // Navigate to profile screen
     const navigateToProfile = () => {
         navigation.navigate('Profile');
     };
 
-    // Navigate to restaurant screen
     const navigateToRestaurant = () => {
         navigation.navigate('Restaurant');
     };
 
-    // Navigate to add food screen
     const navigateToAddFood = () => {
         navigation.navigate('AddFood');
     };
 
-    // Navigate to order History
     const navigateToOrderHistory = () => {
         navigation.navigate('OrderHistory');
     };
@@ -102,7 +94,6 @@ const HomeScreen = ({ navigation }) => {
         fetchFoods();
     };
 
-    // Render each food item
     const renderFoodItem = ({ item }) => (
         <TouchableOpacity style={styles.foodCard} onPress={() => handleBuyFood(item)}>
             <Image
@@ -122,8 +113,7 @@ const HomeScreen = ({ navigation }) => {
     );
 
     return (
-        <View style={styles.container}>
-            {/* Searchbar and Filter Icon */}
+        <SafeAreaView style={styles.container}>
             <View style={styles.searchbarContainer}>
                 <Searchbar
                     placeholder="Search Foods"
@@ -136,13 +126,11 @@ const HomeScreen = ({ navigation }) => {
                 </TouchableOpacity>
             </View>
 
-            {/* Clear Filters Button */}
             <Button mode="contained" onPress={clearFilters} style={styles.clearButton}>
                 <Icon name="close-circle-outline" size={20} color="#fff" />
                 <Text style={styles.clearButtonText}>Clear Filters</Text>
             </Button>
 
-            {/* Main Content */}
             {loading ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#6200EE" />
@@ -159,7 +147,6 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.emptyText}>No foods found</Text>
             )}
 
-            {/* Footer Navbar */}
             <View style={styles.footerNavbar}>
                 <TouchableOpacity style={styles.navbarIcon} onPress={() => navigation.navigate('Home', {}, { forceRefresh: true })}>
                     <Icon name="home-outline" size={30} color="#333" />
@@ -178,7 +165,6 @@ const HomeScreen = ({ navigation }) => {
                 </TouchableOpacity>
             </View>
 
-            {/* Sorting Modal */}
             <Modal
                 transparent={true}
                 animationType="slide"
@@ -216,7 +202,7 @@ const HomeScreen = ({ navigation }) => {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 };
 
@@ -236,20 +222,29 @@ const styles = StyleSheet.create({
     searchbar: {
         flex: 1,
         marginRight: 10,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        elevation: 5,
     },
     filterIcon: {
         padding: 5,
-        backgroundColor: '#EDEDED',
+        backgroundColor: '#fff',
         borderRadius: 10,
+        elevation: 5,
     },
     clearButton: {
         marginVertical: 10,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#6200EE',
+        borderRadius: 5,
+        elevation: 5,
     },
     clearButtonText: {
         marginRight: 5,
+        color: '#fff',
+        fontSize: 16,
     },
     loadingContainer: {
         flex: 1,
@@ -258,11 +253,15 @@ const styles = StyleSheet.create({
     },
     foodCard: {
         backgroundColor: '#ffffff',
-        borderRadius: 10,
+        borderRadius: 15,
         overflow: 'hidden',
         margin: 5,
         flex: 1,
-        elevation: 3,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.4,
+        shadowRadius: 4,
     },
     foodImage: {
         width: '100%',
@@ -272,21 +271,27 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     foodName: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
+        color: '#333',
     },
     foodPrice: {
-        fontSize: 14,
+        fontSize: 16,
         color: '#777',
         marginVertical: 5,
     },
     buyButton: {
         backgroundColor: '#6200EE',
-        paddingVertical: 5,
-        paddingHorizontal: 10,
-        borderRadius: 5,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
         alignItems: 'center',
         flexDirection: 'row',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
     },
     buyButtonText: {
         color: '#fff',
@@ -297,6 +302,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 20,
         fontSize: 18,
+        color: '#777',
     },
     content: {
         paddingBottom: 100,
@@ -306,12 +312,16 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         alignItems: 'center',
         paddingVertical: 10,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#fff',
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
         elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
     },
     navbarIcon: {
         padding: 10,
@@ -320,9 +330,11 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     profileImage: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#6200EE',
     },
     modalContainer: {
         flex: 1,
@@ -334,13 +346,19 @@ const styles = StyleSheet.create({
         width: '80%',
         padding: 20,
         backgroundColor: '#fff',
-        borderRadius: 10,
+        borderRadius: 15,
         alignItems: 'center',
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.5,
+        shadowRadius: 5,
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 20,
+        color: '#333',
     },
     checkboxContainer: {
         flexDirection: 'row',
@@ -350,10 +368,19 @@ const styles = StyleSheet.create({
     checkboxLabel: {
         marginLeft: 8,
         fontSize: 16,
+        color: '#333',
     },
     modalCloseButton: {
         marginTop: 20,
+        backgroundColor: '#6200EE',
+        borderRadius: 5,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
     },
 });
 
 export default HomeScreen;
+

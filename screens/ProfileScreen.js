@@ -17,7 +17,7 @@ const ProfileScreen = ({ navigation }) => {
     const [role, setRole] = useState('user');
     const [address, setAddress] = useState('');
     const [coordinates, setCoordinates] = useState({ latitude: 37.7749, longitude: -122.4194 });
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const auth = getAuth();
     const firestore = getFirestore();
@@ -44,6 +44,7 @@ const ProfileScreen = ({ navigation }) => {
                 setAddress('');
                 setCoordinates({ latitude: 37.7749, longitude: -122.4194 });
             }
+            setIsLoading(false);
         });
 
         return () => unsubscribe();
@@ -104,6 +105,14 @@ const ProfileScreen = ({ navigation }) => {
             Alert.alert('Error', 'Failed to sign out. Please try again.');
         }
     };
+
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#007bff" />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -210,6 +219,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8f9fa',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     content: {
         flex: 1,
