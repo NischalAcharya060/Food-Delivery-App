@@ -20,6 +20,7 @@
     "@stripe/stripe-react-native": "0.37.2",
     "axios": "^1.7.2",
     "body-parser": "^1.20.2",
+    "dotenv": "^16.4.5",
     "expo": "~51.0.18",
     "expo-image-picker": "^15.0.7",
     "expo-location": "^17.0.1",

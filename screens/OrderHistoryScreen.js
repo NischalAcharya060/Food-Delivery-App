@@ -10,7 +10,7 @@ const OrderHistoryScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredOrders, setFilteredOrders] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
-    const [filterStatus, setFilterStatus] = useState('All'); // Default filter status
+    const [filterStatus, setFilterStatus] = useState('All');
     const auth = getAuth();
     const firestore = getFirestore();
 
@@ -30,7 +30,7 @@ const OrderHistoryScreen = () => {
                 fetchedOrders.push({ id: doc.id, ...doc.data() });
             });
             setOrders(fetchedOrders);
-            setFilteredOrders(fetchedOrders); // Initially set all orders as filtered orders
+            setFilteredOrders(fetchedOrders);
         } catch (error) {
             console.error('Error fetching orders:', error);
         } finally {
@@ -50,13 +50,11 @@ const OrderHistoryScreen = () => {
 
     const filterAndSortOrders = (query, status) => {
         let updatedOrders = orders;
-
-        // Filter by status
         if (status !== 'All') {
-            updatedOrders = updatedOrders.filter(order => order.status === status);
+            updatedOrders = updatedOrders.filter(order =>
+                order.status && order.status.toLowerCase() === status.toLowerCase()
+            );
         }
-
-        // Filter by search query
         if (query) {
             updatedOrders = updatedOrders.filter(order =>
                 order.items.some(item =>
@@ -64,7 +62,6 @@ const OrderHistoryScreen = () => {
                 )
             );
         }
-
         setFilteredOrders(updatedOrders);
     };
 
@@ -75,7 +72,7 @@ const OrderHistoryScreen = () => {
 
     const renderItem = ({ item, index }) => (
         <Card style={styles.card}>
-            <Card.Title title={`Order #${index + 1} (ID: ${item.id})`} subtitle={`Date: ${new Date(item.date).toLocaleDateString()}`} />
+            <Card.Title title={`Order #${index + 1}`} subtitle={`ID: ${item.id} - Date: ${new Date(item.date).toLocaleDateString()}`} />
             <Card.Content>
                 <Text style={styles.total}>Total: Rs. {item.total}</Text>
                 {item.items.map((orderItem, itemIndex) => (
@@ -91,21 +88,22 @@ const OrderHistoryScreen = () => {
         </Card>
     );
 
-    // Function to set style based on order status
     const getStatusStyle = (status) => {
-        let color = '#333'; // Default color
-        switch (status) {
-            case 'Delivered':
-                color = '#28a745'; // Green for delivered
-                break;
-            case 'Pending':
-                color = '#ffc107'; // Yellow for pending
-                break;
-            case 'Cancelled':
-                color = '#dc3545'; // Red for cancelled
-                break;
-            default:
-                color = '#333'; // Default color for other cases
+        let color = '#333';
+        if (status) {
+            switch (status.toLowerCase()) {
+                case 'payment complete':
+                    color = '#28a745';
+                    break;
+                case 'payment failed':
+                    color = '#dc3545';
+                    break;
+                case 'pending':
+                    color = '#ffc107';
+                    break;
+                default:
+                    color = '#333';
+            }
         }
         return { backgroundColor: color };
     };
@@ -113,19 +111,14 @@ const OrderHistoryScreen = () => {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Order History</Text>
-            <Searchbar
-                placeholder="Search Orders"
-                onChangeText={handleSearch}
-                value={searchQuery}
-                style={styles.searchbar}
-            />
             <View style={styles.filterContainer}>
-                {['All', 'Delivered', 'Pending', 'Cancelled'].map(status => (
+                {['All', 'Payment Complete', 'Payment Failed', 'Pending'].map(status => (
                     <Chip
                         key={status}
                         selected={filterStatus === status}
                         onPress={() => handleFilter(status)}
-                        style={[styles.chip, filterStatus === status && { backgroundColor: '#6200EE' }]}
+                        style={[styles.chip, filterStatus === status && { backgroundColor: '#6200EE', color: '#ffffff' }]}
+                        textStyle={filterStatus === status && { color: '#ffffff' }}
                     >
                         {status}
                     </Chip>
@@ -152,36 +145,47 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#f0f0f0',
     },
     title: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: 'bold',
         marginBottom: 20,
         color: '#6200EE',
+        textAlign: 'center',
     },
     searchbar: {
         marginBottom: 20,
+        borderRadius: 25,
+        backgroundColor: '#ffffff',
+        elevation: 2,
     },
     filterContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        justifyContent: 'center',
         marginBottom: 20,
+        flexWrap: 'wrap',
     },
     chip: {
-        color: '#fff',
-        backgroundColor: '#999',
         marginHorizontal: 5,
+        marginVertical: 5,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 25,
+        backgroundColor: '#e0e0e0',
+        elevation: 1,
     },
     card: {
         marginBottom: 15,
+        borderRadius: 15,
+        backgroundColor: '#ffffff',
         elevation: 3,
-        borderRadius: 8,
     },
     total: {
         fontSize: 18,
         fontWeight: 'bold',
         marginVertical: 10,
+        color: '#333',
     },
     itemContainer: {
         flexDirection: 'row',
@@ -190,6 +194,7 @@ const styles = StyleSheet.create({
     },
     itemText: {
         fontSize: 16,
+        color: '#555',
     },
     loading: {
         marginTop: 50,
@@ -207,11 +212,18 @@ const styles = StyleSheet.create({
     },
     statusBadge: {
         alignSelf: 'flex-start',
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderRadius: 4,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 20,
         color: '#fff',
         fontWeight: 'bold',
+        fontSize: 14,
+        textTransform: 'uppercase',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 2,
     },
 });
 

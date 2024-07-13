@@ -9,6 +9,7 @@ import RestaurantScreen from '../screens/RestaurantScreen';
 import AddFoodScreen from '../screens/AddFoodScreen';
 import FoodDetailScreen from "../screens/FoodDetailScreen";
 import OrderHistoryScreen from '../screens/OrderHistoryScreen';
+import PaymentSuccessScreen from '../screens/PaymentSuccessScreen';
 
 
 const Stack = createStackNavigator();
@@ -24,6 +25,7 @@ const AppNavigator = () => {
             <Stack.Screen name="AddFood" component={AddFoodScreen} />
             <Stack.Screen name="FoodDetail" component={FoodDetailScreen} />
             <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
+            <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
         </Stack.Navigator>
     );
 };
