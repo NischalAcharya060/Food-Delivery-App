@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
 import { db, auth } from '../firebase/firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 import { useStripe } from '@stripe/stripe-react-native';
@@ -10,11 +11,12 @@ const FoodDetailScreen = ({ route }) => {
     const { food } = route.params;
     const [quantity, setQuantity] = useState(1);
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
+    const navigation = useNavigation();
 
     const fetchPaymentIntentClientSecret = async () => {
         try {
-            const response = await axios.post('https://e7aa-27-34-80-142.ngrok-free.app/create-payment-intent', {
-                amount: food.price * quantity * 100, // amount in cents
+            const response = await axios.post('https://aa43-2400-1a00-bd20-aa04-102c-84d0-6de8-57b8.ngrok-free.app/create-payment-intent', {
+                amount: food.price * quantity * 100,
             });
             const { clientSecret } = response.data;
             return clientSecret;
@@ -24,7 +26,6 @@ const FoodDetailScreen = ({ route }) => {
         }
     };
 
-    // Handles the buy food action
     const handleBuyFood = async () => {
         const user = auth.currentUser;
         if (user) {
@@ -53,6 +54,7 @@ const FoodDetailScreen = ({ route }) => {
                             status: 'payment complete',
                         });
                         Alert.alert('Success', `You have bought ${quantity} ${food.name}(s) for Rs. ${food.price * quantity}`);
+                        navigation.navigate('PaymentSuccess');  // Navigate to PaymentSuccess screen
                     } else {
                         Alert.alert('Error', 'There was an error processing your payment. Please try again.');
                     }

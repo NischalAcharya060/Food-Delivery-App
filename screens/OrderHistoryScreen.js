@@ -10,7 +10,7 @@ const OrderHistoryScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredOrders, setFilteredOrders] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
-    const [filterStatus, setFilterStatus] = useState('All'); // Default filter status
+    const [filterStatus, setFilterStatus] = useState('All');
     const auth = getAuth();
     const firestore = getFirestore();
 
@@ -93,19 +93,19 @@ const OrderHistoryScreen = () => {
 
     // Function to set style based on order status
     const getStatusStyle = (status) => {
-        let color = '#333'; // Default color
+        let color = '#333';
         switch (status) {
             case 'Delivered':
-                color = '#28a745'; // Green for delivered
+                color = '#28a745';
                 break;
             case 'Pending':
-                color = '#ffc107'; // Yellow for pending
+                color = '#ffc107';
                 break;
             case 'Cancelled':
-                color = '#dc3545'; // Red for cancelled
+                color = '#dc3545';
                 break;
             default:
-                color = '#333'; // Default color for other cases
+                color = '#333';
         }
         return { backgroundColor: color };
     };
