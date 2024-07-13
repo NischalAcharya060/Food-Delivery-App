@@ -91,7 +91,7 @@ const FoodDetailScreen = ({ route }) => {
     return (
         <View style={styles.container}>
             <Image
-                source={food.image ? { uri: food.image } : require('../assets/img/food.png')}
+                source={food.image ? { uri: food.image } : require('../assets/img/food.jpg')}
                 style={styles.foodImage}
                 resizeMode="cover"
                 PlaceholderContent={<ActivityIndicator />}

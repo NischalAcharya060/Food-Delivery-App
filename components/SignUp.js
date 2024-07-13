@@ -93,6 +93,7 @@ const styles = StyleSheet.create({
         width: 150,
         height: 150,
         marginBottom: 20,
+        borderRadius: 75,
     },
     title: {
         fontSize: 24,
@@ -100,6 +101,9 @@ const styles = StyleSheet.create({
         color: '#333',
         textAlign: 'center',
         fontWeight: 'bold',
+        textShadowColor: '#aaa',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
     input: {
         width: '100%',
@@ -111,6 +115,11 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         backgroundColor: '#fff',
         color: '#333',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 5,
     },
     passwordContainer: {
         width: '100%',
@@ -121,11 +130,15 @@ const styles = StyleSheet.create({
     eyeIcon: {
         position: 'absolute',
         right: 15,
+        elevation: 3,
     },
     errorText: {
         color: 'red',
         marginBottom: 10,
         textAlign: 'center',
+        textShadowColor: '#000',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
     button: {
         width: '100%',
@@ -135,17 +148,28 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 8,
         marginTop: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.5,
+        shadowRadius: 4,
+        elevation: 5,
     },
     buttonText: {
         color: '#fff',
         fontSize: 18,
         fontWeight: 'bold',
+        textShadowColor: '#000',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
     signinText: {
         marginTop: 20,
         color: '#007bff',
-        textDecorationLine: 'underline',
+        textDecorationLine: 'none',
         fontSize: 16,
+        textShadowColor: '#000',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
 });
 
