@@ -6,12 +6,14 @@ const app = express();
 app.use(bodyParser.json());
 
 app.post('/create-payment-intent', async (req, res) => {
-    const { amount } = req.body;
+   // Convert into NPR
+    let { amount } = req.body;
+    amount *= 100;
 
     try {
         const paymentIntent = await stripe.paymentIntents.create({
             amount,
-            currency: 'usd',
+            currency: 'npr',
         });
 
         res.send({

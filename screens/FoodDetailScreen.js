@@ -17,7 +17,7 @@ const FoodDetailScreen = ({ route }) => {
 
     const fetchPaymentIntentClientSecret = async () => {
         try {
-            const response = await axios.post('https://aa43-2400-1a00-bd20-aa04-102c-84d0-6de8-57b8.ngrok-free.app/create-payment-intent', {
+            const response = await axios.post('https://a09a-2400-1a00-bd20-aa04-102c-84d0-6de8-57b8.ngrok-free.app/create-payment-intent', {
                 amount: food.price * quantity * 100,
             });
             const { clientSecret } = response.data;
