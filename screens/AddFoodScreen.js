@@ -10,12 +10,14 @@ const AddFoodScreen = ({ navigation }) => {
     const [description, setDescription] = useState('');
     const [restaurants, setRestaurants] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isRestaurantLoading, setIsRestaurantLoading] = useState(false);
 
     const firestore = getFirestore();
 
     useEffect(() => {
         const fetchRestaurants = async () => {
             try {
+                setIsRestaurantLoading(true);
                 const restaurantCollection = collection(firestore, 'restaurants');
                 const restaurantSnapshot = await getDocs(restaurantCollection);
                 const restaurantList = restaurantSnapshot.docs.map(doc => ({
@@ -25,6 +27,8 @@ const AddFoodScreen = ({ navigation }) => {
                 setRestaurants(restaurantList);
             } catch (error) {
                 console.error('Error fetching restaurants:', error.message);
+            } finally {
+                setIsRestaurantLoading(false);
             }
         };
 
@@ -96,22 +100,26 @@ const AddFoodScreen = ({ navigation }) => {
             </View>
             <View style={styles.checkboxContainer}>
                 <Text style={styles.checkboxLabel}>Select Restaurant:</Text>
-                {restaurants.map(rest => (
-                    <TouchableOpacity
-                        key={rest.id}
-                        style={[styles.checkbox, selectedRestaurant === rest.id && styles.checkboxSelected]}
-                        onPress={() => handleRestaurantSelect(rest.id)}
-                    >
-                        <View style={styles.checkboxContent}>
-                            {selectedRestaurant === rest.id && (
-                                <Icon name="checkmark" size={16} color="#fff" style={styles.checkboxIcon} />
-                            )}
-                            <Text style={[styles.checkboxText, selectedRestaurant === rest.id && styles.checkboxTextSelected]}>
-                                {rest.name}
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-                ))}
+                {isRestaurantLoading ? (
+                    <ActivityIndicator size="large" color="#007bff" />
+                ) : (
+                    restaurants.map(rest => (
+                        <TouchableOpacity
+                            key={rest.id}
+                            style={[styles.checkbox, selectedRestaurant === rest.id && styles.checkboxSelected]}
+                            onPress={() => handleRestaurantSelect(rest.id)}
+                        >
+                            <View style={styles.checkboxContent}>
+                                {selectedRestaurant === rest.id && (
+                                    <Icon name="checkmark" size={16} color="#fff" style={styles.checkboxIcon} />
+                                )}
+                                <Text style={[styles.checkboxText, selectedRestaurant === rest.id && styles.checkboxTextSelected]}>
+                                    {rest.name}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    ))
+                )}
             </View>
             <View style={[styles.inputContainer, { height: 100 }]}>
                 <Icon name="document-text-outline" size={24} color="#333" style={styles.icon} />

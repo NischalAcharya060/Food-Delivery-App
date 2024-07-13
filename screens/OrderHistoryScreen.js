@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { Card, Searchbar, Chip } from 'react-native-paper';
+import { Card, Chip } from 'react-native-paper';
 
 const OrderHistoryScreen = () => {
     const [orders, setOrders] = useState([]);
