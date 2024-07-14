@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Modal, SafeAreaView } from 'react-native';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
-import { Searchbar, Button, Checkbox } from 'react-native-paper';
+import { Searchbar, Button, Checkbox, Badge } from 'react-native-paper';
 import Icon from "react-native-vector-icons/Ionicons";
 
 const dummyFoodImage = require('../assets/img/food.jpg');
@@ -17,6 +17,7 @@ const HomeScreen = ({ navigation }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredFoods, setFilteredFoods] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
+    const [cart, setCart] = useState([]);
 
     const firestore = getFirestore();
 
@@ -71,6 +72,10 @@ const HomeScreen = ({ navigation }) => {
         navigation.navigate('FoodDetail', { food });
     };
 
+    const handleAddToCart = (food) => {
+        setCart(prevCart => [...prevCart, food]);
+    };
+
     const navigateToProfile = () => {
         navigation.navigate('Profile');
     };
@@ -85,6 +90,10 @@ const HomeScreen = ({ navigation }) => {
 
     const navigateToOrderHistory = () => {
         navigation.navigate('OrderHistory');
+    };
+
+    const navigateToCart = () => {
+        navigation.navigate('Cart', { cart });
     };
 
     const clearFilters = () => {
@@ -104,32 +113,44 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.foodCardContent}>
                 <Text style={styles.foodName}>{item.name}</Text>
                 <Text style={styles.foodPrice}>Rs. {item.price}</Text>
-                <TouchableOpacity style={styles.buyButton} onPress={() => handleBuyFood(item)}>
-                    <Icon name="cart-outline" size={20} color="#fff" />
-                    <Text style={styles.buyButtonText}>Buy</Text>
-                </TouchableOpacity>
+                <View style={styles.actionButtons}>
+                    <TouchableOpacity style={styles.buyButton} onPress={() => handleBuyFood(item)}>
+                        <Icon name="cart-outline" size={20} color="#fff" />
+                        <Text style={styles.buyButtonText}>Buy</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.favoriteButton} onPress={() => handleAddToCart(item)}>
+                        <Icon name="cart-outline" size={20} color="#6200EE" />
+                    </TouchableOpacity>
+                </View>
             </View>
         </TouchableOpacity>
     );
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.searchbarContainer}>
-                <Searchbar
-                    placeholder="Search Foods"
-                    onChangeText={handleSearch}
-                    value={searchQuery}
-                    style={styles.searchbar}
-                />
-                <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.filterIcon}>
-                    <Icon name="filter-outline" size={24} color="#6200EE" />
-                </TouchableOpacity>
+            <View style={styles.header}>
+                <View style={styles.searchbarContainer}>
+                    <Searchbar
+                        placeholder="Search Foods"
+                        onChangeText={handleSearch}
+                        value={searchQuery}
+                        style={styles.searchbar}
+                    />
+                    <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.filterIcon}>
+                        <Icon name="filter-outline" size={24} color="#6200EE" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.cartIcon} onPress={navigateToCart}>
+                        <Icon name="cart-outline" size={24} color="#6200EE" />
+                        {cart.length > 0 && (
+                            <Badge style={styles.cartBadge}>{cart.length}</Badge>
+                        )}
+                    </TouchableOpacity>
+                </View>
+                <Button mode="contained" onPress={clearFilters} style={styles.clearButton}>
+                    <Icon name="close-circle-outline" size={20} color="#fff" />
+                    <Text style={styles.clearButtonText}>Clear Filters</Text>
+                </Button>
             </View>
-
-            <Button mode="contained" onPress={clearFilters} style={styles.clearButton}>
-                <Icon name="close-circle-outline" size={20} color="#fff" />
-                <Text style={styles.clearButtonText}>Clear Filters</Text>
-            </Button>
 
             {loading ? (
                 <View style={styles.loadingContainer}>
@@ -149,16 +170,16 @@ const HomeScreen = ({ navigation }) => {
 
             <View style={styles.footerNavbar}>
                 <TouchableOpacity style={styles.navbarIcon} onPress={() => navigation.navigate('Home', {}, { forceRefresh: true })}>
-                    <Icon name="home-outline" size={30} color="#333" />
+                    <Icon name="home-outline" size={30} color="#6200EE" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.navbarIcon} onPress={navigateToRestaurant}>
-                    <Icon name="restaurant-outline" size={30} color="#333" />
+                    <Icon name="restaurant-outline" size={30} color="#6200EE" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.navbarIcon} onPress={navigateToAddFood}>
-                    <Icon name="add-circle-outline" size={30} color="#333" />
+                    <Icon name="add-circle-outline" size={30} color="#6200EE" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.navbarIcon} onPress={navigateToOrderHistory}>
-                    <Icon name="receipt-outline" size={30} color="#333" />
+                    <Icon name="receipt-outline" size={30} color="#6200EE" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.profileIcon} onPress={navigateToProfile}>
                     <Image source={profileImage} style={styles.profileImage} />
@@ -210,9 +231,15 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8f9fa',
-        paddingHorizontal: 10,
-        paddingBottom: 60,
         position: 'relative',
+    },
+    header: {
+        backgroundColor: '#6200EE',
+        paddingBottom: 20,
+        paddingTop: 10,
+        paddingHorizontal: 10,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
     },
     searchbarContainer: {
         flexDirection: 'row',
@@ -223,118 +250,120 @@ const styles = StyleSheet.create({
         flex: 1,
         marginRight: 10,
         backgroundColor: '#fff',
-        borderRadius: 10,
+        borderRadius: 20,
         elevation: 5,
     },
     filterIcon: {
         padding: 5,
         backgroundColor: '#fff',
-        borderRadius: 10,
+        borderRadius: 20,
         elevation: 5,
+    },
+    cartIcon: {
+        padding: 5,
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        elevation: 5,
+        marginLeft: 10,
+    },
+    cartBadge: {
+        position: 'absolute',
+        top: -8,
+        right: -8,
+        backgroundColor: '#6200EE',
+        color: '#fff',
     },
     clearButton: {
-        marginVertical: 10,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#6200EE',
-        borderRadius: 5,
-        elevation: 5,
+        marginTop: 10,
+        backgroundColor: '#d32f2f',
     },
     clearButtonText: {
-        marginRight: 5,
         color: '#fff',
-        fontSize: 16,
+        marginLeft: 5,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
+    content: {
+        padding: 10,
+    },
     foodCard: {
-        backgroundColor: '#ffffff',
-        borderRadius: 15,
-        overflow: 'hidden',
-        margin: 5,
         flex: 1,
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.4,
-        shadowRadius: 4,
+        margin: 5,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        overflow: 'hidden',
+        elevation: 5,
     },
     foodImage: {
         width: '100%',
-        height: 150,
+        height: 120,
     },
     foodCardContent: {
         padding: 10,
     },
     foodName: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
     },
     foodPrice: {
-        fontSize: 16,
-        color: '#777',
+        fontSize: 14,
+        color: '#6200EE',
         marginVertical: 5,
     },
-    buyButton: {
-        backgroundColor: '#6200EE',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        alignItems: 'center',
+    actionButtons: {
         flexDirection: 'row',
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    buyButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#6200EE',
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        borderRadius: 5,
     },
     buyButtonText: {
         color: '#fff',
-        fontSize: 14,
         marginLeft: 5,
+    },
+    favoriteButton: {
+        padding: 5,
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: '#6200EE',
     },
     emptyText: {
         textAlign: 'center',
+        color: '#888',
         marginTop: 20,
-        fontSize: 18,
-        color: '#777',
-    },
-    content: {
-        paddingBottom: 100,
     },
     footerNavbar: {
         flexDirection: 'row',
         justifyContent: 'space-around',
         alignItems: 'center',
-        paddingVertical: 10,
         backgroundColor: '#fff',
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
         position: 'absolute',
         bottom: 0,
-        left: 0,
-        right: 0,
-        elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
+        width: '100%',
     },
     navbarIcon: {
-        padding: 10,
+        alignItems: 'center',
     },
     profileIcon: {
-        padding: 5,
+        alignItems: 'center',
     },
     profileImage: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        borderWidth: 2,
-        borderColor: '#6200EE',
+        width: 30,
+        height: 30,
+        borderRadius: 15,
     },
     modalContainer: {
         flex: 1,
@@ -343,22 +372,17 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     modalContent: {
-        width: '80%',
+        width: 300,
         padding: 20,
         backgroundColor: '#fff',
-        borderRadius: 15,
-        alignItems: 'center',
+        borderRadius: 10,
         elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.5,
-        shadowRadius: 5,
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 20,
-        color: '#333',
+        marginBottom: 15,
+        textAlign: 'center',
     },
     checkboxContainer: {
         flexDirection: 'row',
@@ -366,21 +390,12 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     checkboxLabel: {
-        marginLeft: 8,
+        marginLeft: 10,
         fontSize: 16,
-        color: '#333',
     },
     modalCloseButton: {
-        marginTop: 20,
-        backgroundColor: '#6200EE',
-        borderRadius: 5,
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
+        marginTop: 10,
     },
 });
 
 export default HomeScreen;
-
