@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, ActivityIndicator, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { getAuth, updateProfile, signOut } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
-import { RadioButton } from 'react-native-paper';
+import { RadioButton, Button, Snackbar } from 'react-native-paper';
 import MapView, { Marker, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 
-// Dummy profile picture URL or local require statement for image
 const dummyProfilePicture = require('../assets/img/profile.jpg');
 
 const ProfileScreen = ({ navigation }) => {
@@ -18,15 +18,47 @@ const ProfileScreen = ({ navigation }) => {
     const [address, setAddress] = useState('');
     const [coordinates, setCoordinates] = useState({ latitude: 37.7749, longitude: -122.4194 });
     const [isLoading, setIsLoading] = useState(true);
+    const [profilePicture, setProfilePicture] = useState(null);
+    const [snackbarVisible, setSnackbarVisible] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [nameError, setNameError] = useState('');
+    const [phoneError, setPhoneError] = useState('');
+    const [addressError, setAddressError] = useState('');
+
 
     const auth = getAuth();
     const firestore = getFirestore();
+
+    const validateForm = () => {
+        let valid = true;
+        if (name.trim() === '') {
+            setNameError('Name is required');
+            valid = false;
+        } else {
+            setNameError('');
+        }
+
+        if (phone.trim() === '' || !/^\d+$/.test(phone)) {
+            setPhoneError('Valid phone number is required');
+            valid = false;
+        } else {
+            setPhoneError('');
+        }
+
+        if (address.trim() === '') {
+            setAddressError('Address is required');
+            valid = false;
+        } else {
+            setAddressError('');
+        }
+
+        return valid;
+    };
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async (user) => {
             if (user) {
                 setEmail(user.email);
-
                 const userDoc = await getDoc(doc(firestore, 'users', user.uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
@@ -35,6 +67,7 @@ const ProfileScreen = ({ navigation }) => {
                     setRole(userData.role || 'user');
                     setAddress(userData.address || '');
                     setCoordinates(userData.coordinates || { latitude: 37.7749, longitude: -122.4194 });
+                    setProfilePicture(userData.profilePicture || null);
                 }
             } else {
                 setEmail('');
@@ -68,6 +101,10 @@ const ProfileScreen = ({ navigation }) => {
     }, [address]);
 
     const handleSaveProfile = async () => {
+        if (!validateForm()) {
+            return;
+        }
+
         try {
             setIsLoading(true);
             const user = auth.currentUser;
@@ -84,9 +121,11 @@ const ProfileScreen = ({ navigation }) => {
                     role,
                     address,
                     coordinates,
+                    profilePicture,
                 });
 
-                Alert.alert('Profile Updated', 'Your profile has been updated successfully.');
+                setSnackbarMessage('Profile Updated Successfully');
+                setSnackbarVisible(true);
             }
         } catch (error) {
             console.error('Error updating profile:', error.message);
@@ -106,6 +145,19 @@ const ProfileScreen = ({ navigation }) => {
         }
     };
 
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            setProfilePicture(result.assets[0].uri);
+        }
+    };
+
     if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
@@ -115,12 +167,15 @@ const ProfileScreen = ({ navigation }) => {
     }
 
     return (
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.content}>
-                <Image source={dummyProfilePicture} style={styles.profileImage} />
+                <TouchableOpacity onPress={pickImage} style={styles.profilePictureContainer}>
+                    <Image source={profilePicture ? { uri: profilePicture } : dummyProfilePicture} style={styles.profileImage} />
+                    <Text style={styles.editPhotoText}>Edit Photo</Text>
+                </TouchableOpacity>
 
                 <View style={styles.inputContainer}>
-                    <Icon name="person-outline" size={24} color="#333" style={styles.icon} />
+                    <Icon name="person-outline" size={24} color="#007bff" style={styles.icon} />
                     <TextInput
                         style={styles.input}
                         placeholder="Name"
@@ -129,8 +184,10 @@ const ProfileScreen = ({ navigation }) => {
                         autoCapitalize="words"
                     />
                 </View>
+                {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+
                 <View style={styles.inputContainer}>
-                    <Icon name="mail-outline" size={24} color="#333" style={styles.icon} />
+                    <Icon name="mail-outline" size={24} color="#007bff" style={styles.icon} />
                     <TextInput
                         style={styles.input}
                         placeholder="Email"
@@ -138,8 +195,9 @@ const ProfileScreen = ({ navigation }) => {
                         editable={false}
                     />
                 </View>
+
                 <View style={styles.inputContainer}>
-                    <Icon name="call-outline" size={24} color="#333" style={styles.icon} />
+                    <Icon name="call-outline" size={24} color="#007bff" style={styles.icon} />
                     <TextInput
                         style={styles.input}
                         placeholder="Phone"
@@ -148,23 +206,10 @@ const ProfileScreen = ({ navigation }) => {
                         keyboardType="phone-pad"
                     />
                 </View>
-                <MapView
-                    style={styles.map}
-                    region={{
-                        latitude: coordinates.latitude,
-                        longitude: coordinates.longitude,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01,
-                    }}
-                >
-                    <UrlTile
-                        urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        maximumZ={19}
-                    />
-                    <Marker coordinate={coordinates} />
-                </MapView>
+                {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
+
                 <View style={styles.inputContainer}>
-                    <Icon name="home-outline" size={24} color="#333" style={styles.icon} />
+                    <Icon name="home-outline" size={24} color="#007bff" style={styles.icon} />
                     <TextInput
                         style={styles.input}
                         placeholder="Address"
@@ -172,8 +217,28 @@ const ProfileScreen = ({ navigation }) => {
                         onChangeText={setAddress}
                     />
                 </View>
+                {addressError ? <Text style={styles.errorText}>{addressError}</Text> : null}
+
                 <View style={styles.inputContainer}>
-                    <Icon name="person-outline" size={24} color="#333" style={styles.icon} />
+                    <MapView
+                        style={styles.map}
+                        region={{
+                            latitude: coordinates.latitude,
+                            longitude: coordinates.longitude,
+                            latitudeDelta: 0.01,
+                            longitudeDelta: 0.01,
+                        }}
+                    >
+                        <UrlTile
+                            urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            maximumZ={19}
+                        />
+                        <Marker coordinate={coordinates} />
+                    </MapView>
+                </View>
+
+                <View style={styles.inputContainer}>
+                    <Icon name="person-outline" size={24} color="#007bff" style={styles.icon} />
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Text style={{ marginRight: 10 }}>Role:</Text>
                         <RadioButton.Group
@@ -188,20 +253,16 @@ const ProfileScreen = ({ navigation }) => {
                     </View>
                 </View>
 
-                <TouchableOpacity
-                    style={[styles.button, isLoading && styles.buttonDisabled]}
+                <Button
+                    mode="contained"
                     onPress={handleSaveProfile}
+                    loading={isLoading}
+                    style={styles.button}
                     disabled={isLoading}
                 >
-                    {isLoading ? (
-                        <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                        <>
-                            <Icon name="save-outline" size={20} color="#fff" style={styles.buttonIcon} />
-                            <Text style={styles.buttonText}>Update Profile</Text>
-                        </>
-                    )}
-                </TouchableOpacity>
+                    <Icon name="save-outline" size={20} color="#fff" style={styles.buttonIcon} />
+                    <Text style={styles.buttonText}>Update Profile</Text>
+                </Button>
 
                 <TouchableOpacity
                     style={styles.logoutButton}
@@ -211,14 +272,24 @@ const ProfileScreen = ({ navigation }) => {
                     <Text style={styles.logoutButtonText}>Logout</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+
+            <Snackbar
+                visible={snackbarVisible}
+                onDismiss={() => setSnackbarVisible(false)}
+                duration={Snackbar.DURATION_SHORT}
+                style={styles.snackbar}
+            >
+                {snackbarMessage}
+            </Snackbar>
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        flexGrow: 1,
         backgroundColor: '#f8f9fa',
+        padding: 20,
     },
     loadingContainer: {
         flex: 1,
@@ -227,9 +298,23 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: 20,
-        paddingVertical: 30,
         alignItems: 'center',
+    },
+    profilePictureContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    profileImage: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        marginBottom: 10,
+        borderWidth: 2,
+        borderColor: '#007bff',
+    },
+    editPhotoText: {
+        color: '#007bff',
+        fontSize: 16,
     },
     inputContainer: {
         flexDirection: 'row',
@@ -248,6 +333,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#333',
     },
+    map: {
+        height: 200,
+        width: '100%',
+        marginBottom: 20,
+    },
     button: {
         backgroundColor: '#007bff',
         height: 50,
@@ -257,9 +347,6 @@ const styles = StyleSheet.create({
         marginTop: 20,
         width: '100%',
         flexDirection: 'row',
-    },
-    buttonDisabled: {
-        backgroundColor: '#b5c0c6',
     },
     buttonText: {
         color: '#fff',
@@ -278,16 +365,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginLeft: 5,
     },
-    map: {
-        height: 200,
-        width: '100%',
-        marginBottom: 20,
+    snackbar: {
+        backgroundColor: '#007bff',
     },
-    profileImage: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        marginBottom: 20,
+    errorText: {
+        color: '#dc3545',
+        marginTop: -15,
+        marginBottom: 15,
+        alignSelf: 'flex-start',
     },
 });
 
