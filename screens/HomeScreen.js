@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -8,
         right: -8,
-        backgroundColor: '#6200EE',
+        backgroundColor: '#d32f2f',
         color: '#fff',
     },
     clearButton: {
@@ -361,9 +361,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     profileImage: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#6200EE',
     },
     modalContainer: {
         flex: 1,
