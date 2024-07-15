@@ -20,7 +20,7 @@ const CartScreen = ({ route }) => {
 
     const fetchPaymentIntentClientSecret = async (amount) => {
         try {
-            const response = await axios.post('https://1495-2400-1a00-bd20-a202-1819-281a-dbb7-4593.ngrok-free.app/create-payment-intent', {
+            const response = await axios.post('https://813d-27-34-80-171.ngrok-free.app/create-payment-intent', {
                 amount: amount * 100,
             });
             const { clientSecret } = response.data;
@@ -39,8 +39,9 @@ const CartScreen = ({ route }) => {
     const handleQuantityChange = (item, increment) => {
         const updatedCart = cartItems.map(cartItem => {
             if (cartItem.id === item.id) {
-                const newQuantity = increment ? cartItem.quantity + 1 : cartItem.quantity - 1;
-                return { ...cartItem, quantity: Math.max(newQuantity, 1) };
+                let newQuantity = increment ? cartItem.quantity + 1 : cartItem.quantity - 1;
+                newQuantity = Math.max(newQuantity, 1);
+                return { ...cartItem, quantity: newQuantity };
             }
             return cartItem;
         });

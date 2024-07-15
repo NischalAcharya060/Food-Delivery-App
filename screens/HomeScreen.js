@@ -93,7 +93,16 @@ const HomeScreen = ({ navigation }) => {
     };
 
     const handleAddToCart = (food) => {
-        setCart(prevCart => [...prevCart, food]);
+        const existingItem = cart.find(item => item.id === food.id);
+
+        if (existingItem) {
+            const updatedCart = cart.map(item =>
+                item.id === food.id ? { ...item, quantity: item.quantity + 1 } : item
+            );
+            setCart(updatedCart);
+        } else {
+            setCart(prevCart => [...prevCart, { ...food, quantity: 1 }]);
+        }
     };
 
     const navigateToProfile = () => {
