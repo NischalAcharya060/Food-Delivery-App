@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Modal, SafeAreaView } from 'react-native';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { useFocusEffect } from '@react-navigation/native';
 import { Searchbar, Button, Checkbox, Badge } from 'react-native-paper';
 import Icon from "react-native-vector-icons/Ionicons";
@@ -10,7 +11,7 @@ const dummyProfileImage = require('../assets/img/profile.jpg');
 
 const HomeScreen = ({ navigation }) => {
     const [foods, setFoods] = useState([]);
-    const [profileImage] = useState(dummyProfileImage);
+    const [profileImage, setProfileImage] = useState(dummyProfileImage);
     const [loading, setLoading] = useState(true);
     const [sortByPriceAsc, setSortByPriceAsc] = useState(false);
     const [sortByPriceDesc, setSortByPriceDesc] = useState(false);
@@ -19,7 +20,23 @@ const HomeScreen = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [cart, setCart] = useState([]);
 
+    const auth = getAuth();
     const firestore = getFirestore();
+
+    const fetchProfileImage = async () => {
+        try {
+            const user = auth.currentUser;
+            if (user) {
+                const userDoc = await getDoc(doc(firestore, 'users', user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    setProfileImage(userData.profilePicture || dummyProfileImage);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching profile image:', error.message);
+        }
+    };
 
     const fetchFoods = async () => {
         setLoading(true);
@@ -60,6 +77,7 @@ const HomeScreen = ({ navigation }) => {
 
     useFocusEffect(
         React.useCallback(() => {
+            fetchProfileImage();
             fetchFoods();
         }, [sortByPriceAsc, sortByPriceDesc, searchQuery])
     );
@@ -182,7 +200,7 @@ const HomeScreen = ({ navigation }) => {
                     <Icon name="receipt-outline" size={30} color="#6200EE" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.profileIcon} onPress={navigateToProfile}>
-                    <Image source={profileImage} style={styles.profileImage} />
+                    <Image source={profileImage ? { uri: profileImage } : dummyProfileImage} style={styles.profileImage} />
                 </TouchableOpacity>
             </View>
 
@@ -239,7 +257,7 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     header: {
-        backgroundColor: '#3700B3', // Darker shade for a richer look
+        backgroundColor: '#3700B3',
         paddingBottom: 15,
         paddingTop: 10,
         paddingHorizontal: 15,
