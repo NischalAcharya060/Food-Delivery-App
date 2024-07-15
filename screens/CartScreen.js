@@ -109,7 +109,7 @@ const CartScreen = ({ route }) => {
     const renderCartItem = ({ item }) => (
         <View style={styles.cartItem}>
             <Image
-                source={item.image ? { uri: item.image } : dummyFoodImage}
+                source={item.foodImage ? { uri: item.foodImage } : dummyFoodImage}
                 style={styles.cartItemImage}
                 resizeMode="cover"
             />

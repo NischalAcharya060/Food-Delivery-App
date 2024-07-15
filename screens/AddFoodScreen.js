@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { getFirestore, collection, getDocs, addDoc } from 'firebase/firestore';
+import * as ImagePicker from 'expo-image-picker';
 
 const AddFoodScreen = ({ navigation }) => {
     const [name, setName] = useState('');
@@ -9,6 +10,7 @@ const AddFoodScreen = ({ navigation }) => {
     const [selectedRestaurant, setSelectedRestaurant] = useState(null);
     const [description, setDescription] = useState('');
     const [restaurants, setRestaurants] = useState([]);
+    const [foodImage, setFoodImage] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isRestaurantLoading, setIsRestaurantLoading] = useState(false);
 
@@ -53,6 +55,7 @@ const AddFoodScreen = ({ navigation }) => {
                 price,
                 restaurant: selectedRestaurant,
                 description,
+                foodImage,
             });
 
             Alert.alert('Success', 'Food added successfully.');
@@ -68,6 +71,19 @@ const AddFoodScreen = ({ navigation }) => {
         }
     };
 
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            setFoodImage(result.assets[0].uri);
+        }
+    };
+
     const handleClear = () => {
         setName('');
         setPrice('');
@@ -78,6 +94,16 @@ const AddFoodScreen = ({ navigation }) => {
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
             <Text style={styles.headerText}>Add Food</Text>
+            <View style={styles.imageContainer}>
+                {foodImage ? (
+                    <Image source={{ uri: foodImage }} style={styles.foodImage} />
+                ) : (
+                    <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
+                        <Icon name="camera-outline" size={24} color="#333" />
+                        <Text style={styles.addImageText}>Add Food Image</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
             <View style={styles.inputContainer}>
                 <Icon name="fast-food-outline" size={24} color="#333" style={styles.icon} />
                 <TextInput
@@ -288,6 +314,30 @@ const styles = StyleSheet.create({
         color: '#333',
         fontSize: 18,
         marginLeft: 10,
+    },
+    imageContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    addImageButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#007bff',
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+    },
+    addImageText: {
+        marginLeft: 10,
+        color: '#333',
+        fontSize: 16,
+    },
+    foodImage: {
+        width: '100%',
+        height: 200,
+        borderRadius: 8,
     },
 });
 

@@ -6,6 +6,7 @@ import { db, auth } from '../firebase/firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 import { useStripe } from '@stripe/stripe-react-native';
 import axios from 'axios';
+import dummyFoodImage from "../assets/img/food.jpg";
 
 const FoodDetailScreen = ({ route }) => {
     const { food } = route.params;
@@ -66,8 +67,8 @@ const FoodDetailScreen = ({ route }) => {
     const saveOrder = async (status) => {
         try {
             const orderId = `order_${new Date().getTime()}`;
-            const orderDoc = doc(db, 'orders', orderId);
-            await setDoc(orderDoc, {
+            const orderDocRef = doc(db, 'orders', orderId);
+            await setDoc(orderDocRef, {
                 userId: auth.currentUser.uid,
                 date: new Date().toISOString(),
                 total: food.price * quantity,
@@ -91,7 +92,7 @@ const FoodDetailScreen = ({ route }) => {
     return (
         <View style={styles.container}>
             <Image
-                source={food.image ? { uri: food.image } : require('../assets/img/food.jpg')}
+                source={food.foodImage ? { uri: food.foodImage } : dummyFoodImage}
                 style={styles.foodImage}
                 resizeMode="cover"
                 PlaceholderContent={<ActivityIndicator />}

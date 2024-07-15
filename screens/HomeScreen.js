@@ -12,6 +12,7 @@ const dummyProfileImage = require('../assets/img/profile.jpg');
 const HomeScreen = ({ navigation }) => {
     const [foods, setFoods] = useState([]);
     const [profileImage, setProfileImage] = useState(dummyProfileImage);
+    const [foodImage, setFoodImage] = useState(dummyFoodImage);
     const [loading, setLoading] = useState(true);
     const [sortByPriceAsc, setSortByPriceAsc] = useState(false);
     const [sortByPriceDesc, setSortByPriceDesc] = useState(false);
@@ -45,7 +46,8 @@ const HomeScreen = ({ navigation }) => {
             const foodSnapshot = await getDocs(foodCollection);
             const foodList = foodSnapshot.docs.map(doc => ({
                 id: doc.id,
-                ...doc.data()
+                ...doc.data(),
+                image: doc.data().image || dummyFoodImage,
             }));
 
             setFoods(foodList);
@@ -124,7 +126,7 @@ const HomeScreen = ({ navigation }) => {
     const renderFoodItem = ({ item }) => (
         <TouchableOpacity style={styles.foodCard} onPress={() => handleBuyFood(item)}>
             <Image
-                source={item.image ? { uri: item.image } : dummyFoodImage}
+                source={item.foodImage ? { uri: item.foodImage } : dummyFoodImage}
                 style={styles.foodImage}
                 resizeMode="cover"
             />
