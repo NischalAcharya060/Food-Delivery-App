@@ -24,7 +24,7 @@ const CartScreen = ({ route }) => {
 
     const fetchPaymentIntentClientSecret = async (amount) => {
         try {
-            const response = await axios.post('https://813d-27-34-80-171.ngrok-free.app/create-payment-intent', {
+            const response = await axios.post('https://898a-27-34-80-171.ngrok-free.app/create-payment-intent', {
                 amount: amount * 100,
             });
             const { clientSecret } = response.data;

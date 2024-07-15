@@ -22,6 +22,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "036ba9d0-d89a-435d-b291-55db0b987ec7"
+      }
+    },
+    "owner": "grdh_ravan"
   }
 }

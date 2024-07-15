@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator, TextInput } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { db, auth } from '../firebase/firebaseConfig';
@@ -15,11 +15,14 @@ const FoodDetailScreen = ({ route }) => {
     const navigation = useNavigation();
     const [loading, setLoading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('online');
+    const [discountCode, setDiscountCode] = useState('');
+    const [discountAmount, setDiscountAmount] = useState(0);
+    const [isValidCode, setIsValidCode] = useState(false);
 
     const fetchPaymentIntentClientSecret = async () => {
         try {
-            const response = await axios.post('https://813d-27-34-80-171.ngrok-free.app/create-payment-intent', {
-                amount: food.price * quantity * 100,
+            const response = await axios.post('https://898a-27-34-80-171.ngrok-free.app/create-payment-intent', {
+                amount: (food.price * quantity - discountAmount) * 100,
             });
             const { clientSecret } = response.data;
             return clientSecret;
@@ -71,7 +74,7 @@ const FoodDetailScreen = ({ route }) => {
             await setDoc(orderDocRef, {
                 userId: auth.currentUser.uid,
                 date: new Date().toISOString(),
-                total: food.price * quantity,
+                total: food.price * quantity - discountAmount,
                 items: [
                     {
                         name: food.name,
@@ -80,12 +83,26 @@ const FoodDetailScreen = ({ route }) => {
                     },
                 ],
                 status: status,
+                discountCode: isValidCode ? discountCode : null,
+                discountAmount: discountAmount,
             });
-            Alert.alert('Success', `You have bought ${quantity} ${food.name}(s) for Rs. ${food.price * quantity}`);
+            Alert.alert('Success', `You have bought ${quantity} ${food.name}(s) for Rs. ${food.price * quantity - discountAmount}`);
             navigation.navigate('PaymentSuccess');
         } catch (error) {
             console.error('Error saving order: ', error);
             Alert.alert('Error', 'There was an error saving your order. Please try again.');
+        }
+    };
+
+    const validateDiscountCode = () => {
+        if (discountCode === 'Nischal') {
+            setDiscountAmount(10);
+            setIsValidCode(true);
+            Alert.alert('Success', 'Discount code applied successfully!');
+        } else {
+            setDiscountAmount(0);
+            setIsValidCode(false);
+            Alert.alert('Error', 'Invalid discount code.');
         }
     };
 
@@ -123,6 +140,25 @@ const FoodDetailScreen = ({ route }) => {
                         </TouchableOpacity>
                     </View>
                 </View>
+
+                <View style={styles.discountContainer}>
+                    <TextInput
+                        style={styles.discountInput}
+                        placeholder="Enter discount code"
+                        value={discountCode}
+                        onChangeText={setDiscountCode}
+                        editable={!isValidCode}
+                    />
+                    <TouchableOpacity
+                        style={styles.applyButton}
+                        onPress={validateDiscountCode}
+                        disabled={isValidCode || loading}
+                    >
+                        <Text style={styles.applyButtonText}>{isValidCode ? 'Applied' : 'Apply'}</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <Text style={styles.totalPrice}>Total: Rs. {food.price * quantity - discountAmount}</Text>
 
                 <View style={styles.paymentOptions}>
                     <TouchableOpacity
@@ -206,6 +242,34 @@ const styles = StyleSheet.create({
     quantity: {
         fontSize: 18,
         marginHorizontal: 10,
+        color: '#333',
+    },
+    discountContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    discountInput: {
+        flex: 1,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        padding: 10,
+        borderRadius: 5,
+    },
+    applyButton: {
+        backgroundColor: '#6200EE',
+        padding: 10,
+        borderRadius: 5,
+        marginLeft: 10,
+    },
+    applyButtonText: {
+        color: '#fff',
+        fontSize: 16,
+    },
+    totalPrice: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 20,
         color: '#333',
     },
     paymentOptions: {
