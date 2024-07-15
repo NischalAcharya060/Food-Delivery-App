@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, Alert, SafeAreaView, ActivityIndicator } from 'react-native';
 import { Button, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -17,6 +17,10 @@ const CartScreen = ({ route }) => {
     const navigation = useNavigation();
     const [loading, setLoading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('online');
+
+    useEffect(() => {
+        setCartItems(cart);
+    }, [cart]);
 
     const fetchPaymentIntentClientSecret = async (amount) => {
         try {
@@ -65,6 +69,7 @@ const CartScreen = ({ route }) => {
                             const { error: paymentError } = await presentPaymentSheet();
                             if (!paymentError) {
                                 await saveOrder('payment complete');
+                                setCartItems([]);
                             } else {
                                 Alert.alert('Error', 'There was an error processing your payment. Please try again.');
                             }
@@ -73,6 +78,7 @@ const CartScreen = ({ route }) => {
                         }
                     } else {
                         await saveOrder('pending');
+                        setCartItems([]);
                     }
                 } else {
                     Alert.alert('Cart Empty', 'Please add items to the cart.');
@@ -253,17 +259,19 @@ const styles = StyleSheet.create({
     },
     paymentOptions: {
         flexDirection: 'row',
-        justifyContent: 'space-evenly',
-        padding: 10,
+        justifyContent: 'center',
+        marginVertical: 10,
     },
     paymentOptionButton: {
         flexDirection: 'row',
         alignItems: 'center',
+        paddingHorizontal: 15,
         paddingVertical: 10,
-        paddingHorizontal: 20,
         borderRadius: 5,
+        marginRight: 10,
         backgroundColor: '#fff',
-        elevation: 3,
+        borderWidth: 1,
+        borderColor: '#6200EE',
     },
     activePaymentOption: {
         backgroundColor: '#6200EE',
@@ -276,16 +284,18 @@ const styles = StyleSheet.create({
         color: '#ffffff',
     },
     footer: {
-        padding: 20,
-        borderTopWidth: 1,
-        borderColor: '#eee',
+        paddingHorizontal: 10,
+        marginTop: 20,
     },
     checkoutButton: {
         backgroundColor: '#6200EE',
+        paddingVertical: 10,
+        borderRadius: 5,
     },
     checkoutButtonText: {
         color: '#fff',
-        fontSize: 18,
+        fontSize: 16,
+        textTransform: 'uppercase',
     },
 });
 

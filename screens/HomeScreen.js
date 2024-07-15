@@ -123,6 +123,7 @@ const HomeScreen = ({ navigation }) => {
 
     const navigateToCart = () => {
         navigation.navigate('Cart', { cart });
+        setCart([]);
     };
 
     const clearFilters = () => {
