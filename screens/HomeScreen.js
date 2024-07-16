@@ -60,11 +60,26 @@ const HomeScreen = ({ navigation }) => {
         try {
             let foodCollection = collection(firestore, 'foods');
             const foodSnapshot = await getDocs(foodCollection);
-            const foodList = foodSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                image: doc.data().image || dummyFoodImage,
-            }));
+            const foodList = await Promise.all(
+                foodSnapshot.docs.map(async (foodDoc) => {
+                    const foodData = foodDoc.data();
+                    let restaurantData = null;
+
+                    if (foodData.restaurant) {
+                        const restaurantDoc = await getDoc(doc(firestore, 'restaurants', foodData.restaurant));
+                        if (restaurantDoc.exists()) {
+                            restaurantData = restaurantDoc.data();
+                        }
+                    }
+
+                    return {
+                        id: foodDoc.id,
+                        ...foodData,
+                        image: foodData.image || dummyFoodImage,
+                        restaurant: restaurantData,
+                    };
+                })
+            );
 
             setFoods(foodList);
             applyFilters(foodList);

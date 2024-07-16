@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator, TextInput, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { db, auth } from '../firebase/firebaseConfig';
@@ -107,7 +107,7 @@ const FoodDetailScreen = ({ route }) => {
     };
 
     return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container}>
             <Image
                 source={food.foodImage ? { uri: food.foodImage } : dummyFoodImage}
                 style={styles.foodImage}
@@ -119,6 +119,18 @@ const FoodDetailScreen = ({ route }) => {
                 <Text style={styles.foodName}>{food.name}</Text>
                 <Text style={styles.foodPrice}>Rs. {food.price}</Text>
                 <Text style={styles.foodDescription}>{food.description}</Text>
+
+                {food.restaurant && (
+                    <View style={styles.restaurantDetails}>
+                        <Text style={styles.restaurantTitle}>Restaurant Details:</Text>
+                        <Text style={styles.restaurantDetail}>Name: {food.restaurant.name}</Text>
+                        <Text style={styles.restaurantDetail}>Address: {food.restaurant.address}</Text>
+                        <Text style={styles.restaurantDetail}>Cuisine: {food.restaurant.cuisine}</Text>
+                        <Text style={styles.restaurantDetail}>Description: {food.restaurant.description}</Text>
+                        <Text style={styles.restaurantDetail}>Phone: {food.restaurant.phone}</Text>
+                        <Text style={styles.restaurantDetail}>Coordinates: {food.restaurant.coordinates.latitude}, {food.restaurant.coordinates.longitude}</Text>
+                    </View>
+                )}
 
                 <View style={styles.quantityContainer}>
                     <Text style={styles.quantityLabel}>Quantity:</Text>
@@ -188,7 +200,7 @@ const FoodDetailScreen = ({ route }) => {
                     )}
                 </TouchableOpacity>
             </View>
-        </View>
+        </ScrollView>
     );
 };
 
@@ -251,26 +263,29 @@ const styles = StyleSheet.create({
     },
     discountInput: {
         flex: 1,
-        borderColor: '#ccc',
-        borderWidth: 1,
-        padding: 10,
+        backgroundColor: '#f2f2f2',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
         borderRadius: 5,
+        marginRight: 10,
+        fontSize: 16,
+        color: '#333',
     },
     applyButton: {
         backgroundColor: '#6200EE',
-        padding: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
         borderRadius: 5,
-        marginLeft: 10,
     },
     applyButtonText: {
-        color: '#fff',
         fontSize: 16,
+        color: '#fff',
     },
     totalPrice: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         marginBottom: 20,
-        color: '#333',
+        color: '#6200EE',
     },
     paymentOptions: {
         flexDirection: 'row',
@@ -294,23 +309,38 @@ const styles = StyleSheet.create({
         backgroundColor: '#6200EE',
     },
     activePaymentOptiontext: {
-        color: '#ffffff',
+        color: '#fff',
     },
     buyButton: {
-        backgroundColor: '#6200EE',
-        paddingVertical: 12,
-        paddingHorizontal: 10,
-        borderRadius: 5,
-        alignItems: 'center',
         flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#6200EE',
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        borderRadius: 5,
         justifyContent: 'center',
-        marginTop: 20,
     },
     buyButtonText: {
-        color: '#fff',
         fontSize: 18,
-        marginLeft: 5,
-        textAlign: 'center',
+        color: '#fff',
+        marginLeft: 10,
+    },
+    restaurantDetails: {
+        marginTop: 15,
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
+        paddingTop: 15,
+    },
+    restaurantTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        color: '#333',
+    },
+    restaurantDetail: {
+        fontSize: 16,
+        marginBottom: 5,
+        color: '#555',
     },
 });
 
