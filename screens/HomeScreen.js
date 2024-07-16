@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Modal, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Modal, SafeAreaView, Alert} from 'react-native';
 import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useFocusEffect } from '@react-navigation/native';
@@ -20,6 +20,7 @@ const HomeScreen = ({ navigation }) => {
     const [filteredFoods, setFilteredFoods] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
     const [cart, setCart] = useState([]);
+    const [role, setRole] = useState('');
 
     const auth = getAuth();
     const firestore = getFirestore();
@@ -36,6 +37,21 @@ const HomeScreen = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Error fetching profile image:', error.message);
+        }
+    };
+
+    const fetchUserRole = async () => {
+        try {
+            const user = auth.currentUser;
+            if (user) {
+                const userDoc = await getDoc(doc(firestore, 'users', user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    setRole(userData.role);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching user role:', error.message);
         }
     };
 
@@ -81,6 +97,7 @@ const HomeScreen = ({ navigation }) => {
         React.useCallback(() => {
             fetchProfileImage();
             fetchFoods();
+            fetchUserRole();
         }, [sortByPriceAsc, sortByPriceDesc, searchQuery])
     );
 
@@ -110,11 +127,19 @@ const HomeScreen = ({ navigation }) => {
     };
 
     const navigateToRestaurant = () => {
+        if (role === 'admin') {
         navigation.navigate('Restaurant');
+        } else {
+            Alert.alert('Unauthorized', 'You are not authorized to add restaurants..');
+        }
     };
 
     const navigateToAddFood = () => {
+        if (role === 'admin') {
         navigation.navigate('AddFood');
+        } else {
+            Alert.alert('Unauthorized', 'You are not authorized to add foods.');
+        }
     };
 
     const navigateToOrderHistory = () => {
