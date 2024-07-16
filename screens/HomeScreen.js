@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Modal, SafeAreaView, Alert} from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, Modal, SafeAreaView, Alert } from 'react-native';
 import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useFocusEffect } from '@react-navigation/native';
+import NetInfo from '@react-native-community/netinfo';
 import { Searchbar, Button, Checkbox, Badge } from 'react-native-paper';
 import Icon from "react-native-vector-icons/Ionicons";
 
@@ -21,9 +22,20 @@ const HomeScreen = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [cart, setCart] = useState([]);
     const [role, setRole] = useState('');
+    const [isConnected, setIsConnected] = useState(true);
 
     const auth = getAuth();
     const firestore = getFirestore();
+
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(state => {
+            setIsConnected(state.isConnected);
+        });
+
+        return () => {
+            unsubscribe();
+        };
+    }, []);
 
     const fetchProfileImage = async () => {
         try {
@@ -143,15 +155,15 @@ const HomeScreen = ({ navigation }) => {
 
     const navigateToRestaurant = () => {
         if (role === 'admin') {
-        navigation.navigate('Restaurant');
+            navigation.navigate('Restaurant');
         } else {
-            Alert.alert('Unauthorized', 'You are not authorized to add restaurants..');
+            Alert.alert('Unauthorized', 'You are not authorized to add restaurants.');
         }
     };
 
     const navigateToAddFood = () => {
         if (role === 'admin') {
-        navigation.navigate('AddFood');
+            navigation.navigate('AddFood');
         } else {
             Alert.alert('Unauthorized', 'You are not authorized to add foods.');
         }
@@ -222,7 +234,19 @@ const HomeScreen = ({ navigation }) => {
                 </Button>
             </View>
 
-            {loading ? (
+            {!isConnected ? (
+                <Modal
+                    transparent={true}
+                    animationType="slide"
+                    visible={true}
+                >
+                    <View style={styles.overlay}>
+                        <View style={styles.noConnectionContainer}>
+                            <Text style={styles.noConnectionText}>No Internet Connection</Text>
+                        </View>
+                    </View>
+                </Modal>
+            ) : loading ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#6200EE" />
                 </View>
@@ -541,6 +565,29 @@ const styles = StyleSheet.create({
         color: '#ffffff',
         fontSize: 16,
         fontWeight: '600',
+    },
+    overlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    noConnectionContainer: {
+        width: '80%',
+        padding: 20,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    noConnectionText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
     },
 });
 

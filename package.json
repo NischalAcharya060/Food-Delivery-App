@@ -11,6 +11,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~3.2.1",
     "@react-native-async-storage/async-storage": "^1.23.1",
+    "@react-native-community/netinfo": "^11.3.2",
     "@react-native-firebase/firestore": "^20.1.0",
     "@react-native-firebase/storage": "^20.1.0",
     "@react-native-picker/picker": "^2.7.7",
