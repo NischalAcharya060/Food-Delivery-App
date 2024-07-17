@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, Image, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { Provider, Modal, Portal, Button, Card } from 'react-native-paper';
 
@@ -16,6 +16,7 @@ const AddFoodScreen = ({ navigation }) => {
     const [isRestaurantLoading, setIsRestaurantLoading] = useState(false);
     const [foods, setFoods] = useState([]);
     const [visible, setVisible] = useState(false);
+    const [currentFood, setCurrentFood] = useState(null);
 
     const firestore = getFirestore();
 
@@ -125,6 +126,41 @@ const AddFoodScreen = ({ navigation }) => {
         }
     };
 
+    const handleEditFood = async () => {
+        if (!currentFood) return;
+        if (name === '' || price === '' || !selectedRestaurant || description === '') {
+            Alert.alert('Error', 'Please fill out all fields and select a restaurant.');
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+
+            await updateDoc(doc(firestore, 'foods', currentFood.id), {
+                name,
+                price,
+                restaurant: selectedRestaurant,
+                description,
+                foodImage,
+            });
+
+            Alert.alert('Success', 'Food updated successfully.');
+            setFoods(foods.map(food => food.id === currentFood.id ? { ...food, name, price, restaurant: selectedRestaurant, description, foodImage } : food));
+            setVisible(false);
+            setCurrentFood(null);
+            setName('');
+            setPrice('');
+            setSelectedRestaurant(null);
+            setDescription('');
+            setFoodImage(null);
+        } catch (error) {
+            console.error('Error updating food:', error.message);
+            Alert.alert('Error', 'Failed to update food. Please try again later.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const renderFoodItem = ({ item }) => (
         <Card style={styles.foodItemContainer}>
             <Card.Content>
@@ -133,7 +169,15 @@ const AddFoodScreen = ({ navigation }) => {
                 <Image source={{ uri: item.foodImage }} style={styles.foodImage} />
             </Card.Content>
             <Card.Actions>
-                <Button onPress={() => setVisible(true)}>Edit</Button>
+                <Button onPress={() => {
+                    setCurrentFood(item);
+                    setName(item.name);
+                    setPrice(item.price);
+                    setSelectedRestaurant(item.restaurant);
+                    setDescription(item.description);
+                    setFoodImage(item.foodImage);
+                    setVisible(true);
+                }}>Edit</Button>
                 <Button onPress={() => handleDeleteFood(item.id)}>Delete</Button>
             </Card.Actions>
         </Card>
@@ -141,112 +185,202 @@ const AddFoodScreen = ({ navigation }) => {
 
     return (
         <Provider>
-            <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-                <Text style={styles.headerText}>Add Food</Text>
-                <View style={styles.imageContainer}>
-                    {foodImage ? (
-                        <>
-                            <Image source={{ uri: foodImage }} style={styles.foodImage} />
-                            <TouchableOpacity style={styles.removeImageButton} onPress={() => setFoodImage(null)}>
-                                <Icon name="close-circle-outline" size={24} color="#ff4d4d" />
-                                <Text style={styles.removeImageText}>Remove Image</Text>
-                            </TouchableOpacity>
-                        </>
-                    ) : (
-                        <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
-                            <Icon name="camera-outline" size={24} color="#333" />
-                            <Text style={styles.addImageText}>Add Food Image</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-                <View style={styles.inputContainer}>
-                    <Icon name="fast-food-outline" size={24} color="#333" style={styles.icon} />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Food Name"
-                        value={name}
-                        onChangeText={setName}
-                    />
-                </View>
-                <View style={styles.inputContainer}>
-                    <Icon name="pricetag-outline" size={24} color="#333" style={styles.icon} />
-                    <Text style={styles.currencyPrefix}>NPR</Text>
-                    <TextInput
-                        style={[styles.input, { flex: 1 }]}
-                        placeholder="Price"
-                        value={price}
-                        onChangeText={setPrice}
-                        keyboardType="numeric"
-                    />
-                </View>
-                <View style={styles.checkboxContainer}>
-                    <Text style={styles.checkboxLabel}>Select Restaurant:</Text>
-                    {isRestaurantLoading ? (
-                        <ActivityIndicator size="large" color="#007bff" />
-                    ) : (
-                        restaurants.map(rest => (
-                            <TouchableOpacity
-                                key={rest.id}
-                                style={[styles.checkbox, selectedRestaurant === rest.id && styles.checkboxSelected]}
-                                onPress={() => handleRestaurantSelect(rest.id)}
-                            >
-                                <View style={styles.checkboxContent}>
-                                    {selectedRestaurant === rest.id && (
-                                        <Icon name="checkmark" size={16} color="#fff" style={styles.checkboxIcon} />
-                                    )}
-                                    <View>
-                                        <Text style={[styles.checkboxText, selectedRestaurant === rest.id && styles.checkboxTextSelected]}>
-                                            {rest.name}
-                                        </Text>
-                                        <Text style={styles.checkboxSubText}>{rest.cuisine}</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-                        ))
-                    )}
-                </View>
-                <View style={[styles.inputContainer, { height: 100 }]}>
-                    <Icon name="document-text-outline" size={24} color="#333" style={styles.icon} />
-                    <TextInput
-                        style={[styles.input, { height: '100%', textAlignVertical: 'top' }]}
-                        placeholder="Description"
-                        value={description}
-                        onChangeText={setDescription}
-                    />
-                </View>
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                        style={[styles.button, isLoading && styles.buttonDisabled]}
-                        onPress={handleAddFood}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? (
-                            <ActivityIndicator size="small" color="#fff" />
-                        ) : (
-                            <>
-                                <Icon name="add-circle-outline" size={24} color="#fff" style={styles.buttonIcon} />
-                                <Text style={styles.buttonText}>Add Food</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
-                        <Icon name="close-circle-outline" size={24} color="#333" style={styles.buttonIcon} />
-                        <Text style={styles.clearButtonText}>Clear</Text>
-                    </TouchableOpacity>
-                </View>
-                <Text style={                    styles.subHeaderText}>Food List</Text>
+            <View style={styles.container}>
                 <FlatList
+                    ListHeaderComponent={
+                        <>
+                            <Text style={styles.headerText}>Add Food</Text>
+                            <View style={styles.imageContainer}>
+                                {foodImage ? (
+                                    <>
+                                        <Image source={{ uri: foodImage }} style={styles.foodImage} />
+                                        <TouchableOpacity style={styles.removeImageButton} onPress={() => setFoodImage(null)}>
+                                            <Icon name="close-circle-outline" size={24} color="#ff4d4d" />
+                                            <Text style={styles.removeImageText}>Remove Image</Text>
+                                        </TouchableOpacity>
+                                    </>
+                                ) : (
+                                    <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
+                                        <Icon name="camera-outline" size={24} color="#333" />
+                                        <Text style={styles.addImageText}>Add Food Image</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                            <View style={styles.inputContainer}>
+                                <Icon name="fast-food-outline" size={24} color="#333" style={styles.icon} />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Food Name"
+                                    value={name}
+                                    onChangeText={setName}
+                                />
+                            </View>
+                            <View style={styles.inputContainer}>
+                                <Icon name="pricetag-outline" size={24} color="#333" style={styles.icon} />
+                                <Text style={styles.currencyPrefix}>NPR</Text>
+                                <TextInput
+                                    style={[styles.input, { flex: 1 }]}
+                                    placeholder="Price"
+                                    value={price}
+                                    onChangeText={setPrice}
+                                    keyboardType="numeric"
+                                />
+                            </View>
+                            <View style={styles.checkboxContainer}>
+                                <Text style={styles.checkboxLabel}>Select Restaurant:</Text>
+                                {isRestaurantLoading ? (
+                                    <ActivityIndicator size="large" color="#007bff" />
+                                ) : (
+                                    restaurants.map(rest => (
+                                        <TouchableOpacity
+                                            key={rest.id}
+                                            style={[styles.checkbox, selectedRestaurant === rest.id && styles.checkboxSelected]}
+                                            onPress={() => handleRestaurantSelect(rest.id)}
+                                        >
+                                            <View style={styles.checkboxContent}>
+                                                {selectedRestaurant === rest.id && (
+                                                    <Icon name="checkmark" size={16} color="#fff" style={styles.checkboxIcon} />
+                                                )}
+                                                <View>
+                                                    <Text style={[styles.checkboxText, selectedRestaurant === rest.id && styles.checkboxTextSelected]}>
+                                                        {rest.name}
+                                                    </Text>
+                                                    <Text style={styles.checkboxSubText}>{rest.cuisine}</Text>
+                                                </View>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))
+                                )}
+                            </View>
+                            <View style={[styles.inputContainer, { height: 100 }]}>
+                                <Icon name="document-text-outline" size={24} color="#333" style={styles.icon} />
+                                <TextInput
+                                    style={[styles.input, { height: '100%', textAlignVertical: 'top' }]}
+                                    placeholder="Description"
+                                    value={description}
+                                    onChangeText={setDescription}
+                                />
+                            </View>
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity
+                                    style={[styles.button, isLoading && styles.buttonDisabled]}
+                                    onPress={handleAddFood}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <ActivityIndicator size="small" color="#fff" />
+                                    ) : (
+                                        <>
+                                            <Icon name="add-circle-outline" size={24} color="#fff" style={styles.buttonIcon} />
+                                            <Text style={styles.buttonText}>Add Food</Text>
+                                        </>
+                                    )}
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
+                                    <Icon name="close-circle-outline" size={24} color="#333" style={styles.buttonIcon} />
+                                    <Text style={styles.clearButtonText}>Clear</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={styles.subHeaderText}>Food List</Text>
+                        </>
+                    }
                     data={foods}
                     renderItem={renderFoodItem}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.foodListContainer}
                 />
-            </ScrollView>
+            </View>
             <Portal>
                 <Modal visible={visible} onDismiss={() => setVisible(false)} contentContainerStyle={styles.modalContainer}>
-                    <Text>Edit Food</Text>
-                    {/* Add form inputs and functionality for editing food items here */}
-                    <Button onPress={() => setVisible(false)}>Close</Button>
+                    <Text style={styles.modalHeaderText}>Edit Food</Text>
+                    <View style={styles.imageContainer}>
+                        {foodImage ? (
+                            <>
+                                <Image source={{ uri: foodImage }} style={styles.foodImage} />
+                                <TouchableOpacity style={styles.removeImageButton} onPress={() => setFoodImage(null)}>
+                                    <Icon name="close-circle-outline" size={24} color="#ff4d4d" />
+                                    <Text style={styles.removeImageText}>Remove Image</Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
+                                <Icon name="camera-outline" size={24} color="#333" />
+                                <Text style={styles.addImageText}>Add Food Image</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                    <View style={styles.inputContainer}>
+                        <Icon name="fast-food-outline" size={24} color="#333" style={styles.icon} />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Food Name"
+                            value={name}
+                            onChangeText={setName}
+                        />
+                    </View>
+                    <View style={styles.inputContainer}>
+                        <Icon name="pricetag-outline" size={24} color="#333" style={styles.icon} />
+                        <Text style={styles.currencyPrefix}>NPR</Text>
+                        <TextInput
+                            style={[styles.input, { flex: 1 }]}
+                            placeholder="Price"
+                            value={price}
+                            onChangeText={setPrice}
+                            keyboardType="numeric"
+                        />
+                    </View>
+                    <View style={styles.checkboxContainer}>
+                        <Text style={styles.checkboxLabel}>Select Restaurant:</Text>
+                        {isRestaurantLoading ? (
+                            <ActivityIndicator size="large" color="#007bff" />
+                        ) : (
+                            restaurants.map(rest => (
+                                <TouchableOpacity
+                                    key={rest.id}
+                                    style={[styles.checkbox, selectedRestaurant === rest.id && styles.checkboxSelected]}
+                                    onPress={() => handleRestaurantSelect(rest.id)}
+                                >
+                                    <View style={styles.checkboxContent}>
+                                        {selectedRestaurant === rest.id && (
+                                            <Icon name="checkmark" size={16} color="#fff" style={styles.checkboxIcon} />
+                                        )}
+                                        <View>
+                                            <Text style={[styles.checkboxText, selectedRestaurant === rest.id && styles.checkboxTextSelected]}>
+                                                {rest.name}
+                                            </Text>
+                                            <Text style={styles.checkboxSubText}>{rest.cuisine}</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            ))
+                        )}
+                    </View>
+                    <View style={[styles.inputContainer, { height: 100 }]}>
+                        <Icon name="document-text-outline" size={24} color="#333" style={styles.icon} />
+                        <TextInput
+                            style={[styles.input, { height: '100%', textAlignVertical: 'top' }]}
+                            placeholder="Description"
+                            value={description}
+                            onChangeText={setDescription}
+                        />
+                    </View>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={[styles.button, isLoading && styles.buttonDisabled]}
+                            onPress={handleEditFood}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <>
+                                    <Icon name="save-outline" size={24} color="#fff" style={styles.buttonIcon} />
+                                    <Text style={styles.buttonText}>Save Changes</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                        <Button onPress={() => setVisible(false)}>Close</Button>
+                    </View>
                 </Modal>
             </Portal>
         </Provider>
@@ -257,8 +391,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f9f9f9',
-    },
-    contentContainer: {
         padding: 16,
     },
     headerText: {
@@ -425,6 +557,12 @@ const styles = StyleSheet.create({
         padding: 20,
         marginHorizontal: 20,
         borderRadius: 8,
+    },
+    modalHeaderText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 16,
+        color: '#333',
     },
 });
 
