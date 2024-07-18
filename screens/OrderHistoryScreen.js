@@ -29,6 +29,8 @@ const OrderHistoryScreen = () => {
             querySnapshot.forEach((doc) => {
                 fetchedOrders.push({ id: doc.id, ...doc.data() });
             });
+            // Sort orders by date in descending order (latest first)
+            fetchedOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
             setOrders(fetchedOrders);
             setFilteredOrders(fetchedOrders);
         } catch (error) {
@@ -82,6 +84,9 @@ const OrderHistoryScreen = () => {
                         <Text style={styles.itemText}>Price: Rs. {orderItem.price}</Text>
                     </View>
                 ))}
+                {item.discountAmount > 0 && (
+                    <Text style={styles.discount}>Discount Applied: Rs. {item.discountAmount}</Text>
+                )}
                 <View style={styles.separator} />
                 <Text style={[styles.statusBadge, getStatusStyle(item.status)]}>{item.status}</Text>
             </Card.Content>
@@ -195,6 +200,11 @@ const styles = StyleSheet.create({
     itemText: {
         fontSize: 16,
         color: '#555',
+    },
+    discount: {
+        fontSize: 16,
+        color: '#555',
+        fontStyle: 'italic',
     },
     loading: {
         marginTop: 50,

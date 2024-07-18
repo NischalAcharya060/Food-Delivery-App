@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator, TextInput, ScrollView, Linking } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import MapView, { Marker, UrlTile } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
 import { db, auth } from '../firebase/firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 import { useStripe } from '@stripe/stripe-react-native';
 import axios from 'axios';
+import dummyFoodImage from "../assets/img/food.jpg";
 
 const FoodDetailScreen = ({ route }) => {
     const { food } = route.params;
@@ -14,11 +16,14 @@ const FoodDetailScreen = ({ route }) => {
     const navigation = useNavigation();
     const [loading, setLoading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('online');
+    const [discountCode, setDiscountCode] = useState('');
+    const [discountAmount, setDiscountAmount] = useState(0);
+    const [isValidCode, setIsValidCode] = useState(false);
 
     const fetchPaymentIntentClientSecret = async () => {
         try {
-            const response = await axios.post('https://ce4c-2400-1a00-bd20-d95f-1819-281a-dbb7-4593.ngrok-free.app/create-payment-intent', {
-                amount: food.price * quantity * 100,
+            const response = await axios.post('https://898a-27-34-80-171.ngrok-free.app/create-payment-intent', {
+                amount: (food.price * quantity - discountAmount) * 100,
             });
             const { clientSecret } = response.data;
             return clientSecret;
@@ -66,11 +71,11 @@ const FoodDetailScreen = ({ route }) => {
     const saveOrder = async (status) => {
         try {
             const orderId = `order_${new Date().getTime()}`;
-            const orderDoc = doc(db, 'orders', orderId);
-            await setDoc(orderDoc, {
+            const orderDocRef = doc(db, 'orders', orderId);
+            await setDoc(orderDocRef, {
                 userId: auth.currentUser.uid,
                 date: new Date().toISOString(),
-                total: food.price * quantity,
+                total: food.price * quantity - discountAmount,
                 items: [
                     {
                         name: food.name,
@@ -79,8 +84,10 @@ const FoodDetailScreen = ({ route }) => {
                     },
                 ],
                 status: status,
+                discountCode: isValidCode ? discountCode : null,
+                discountAmount: discountAmount,
             });
-            Alert.alert('Success', `You have bought ${quantity} ${food.name}(s) for Rs. ${food.price * quantity}`);
+            Alert.alert('Success', `You have bought ${quantity} ${food.name}(s) for Rs. ${food.price * quantity - discountAmount}`);
             navigation.navigate('PaymentSuccess');
         } catch (error) {
             console.error('Error saving order: ', error);
@@ -88,10 +95,24 @@ const FoodDetailScreen = ({ route }) => {
         }
     };
 
+    const validateDiscountCode = () => {
+        const discountPercentage = 10;
+        if (discountCode === 'Nischal') {
+            const discount = (food.price * quantity * discountPercentage) / 100;
+            setDiscountAmount(discount);
+            setIsValidCode(true);
+            Alert.alert('Success', 'Discount code applied successfully!');
+        } else {
+            setDiscountAmount(0);
+            setIsValidCode(false);
+            Alert.alert('Error', 'Invalid discount code.');
+        }
+    };
+
     return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container}>
             <Image
-                source={food.image ? { uri: food.image } : require('../assets/img/food.jpg')}
+                source={food.foodImage ? { uri: food.foodImage } : dummyFoodImage}
                 style={styles.foodImage}
                 resizeMode="cover"
                 PlaceholderContent={<ActivityIndicator />}
@@ -101,6 +122,33 @@ const FoodDetailScreen = ({ route }) => {
                 <Text style={styles.foodName}>{food.name}</Text>
                 <Text style={styles.foodPrice}>Rs. {food.price}</Text>
                 <Text style={styles.foodDescription}>{food.description}</Text>
+
+                {food.restaurant && (
+                    <View style={styles.restaurantDetails}>
+                        <Text style={styles.restaurantTitle}>Restaurant Details:</Text>
+                        <Text style={styles.restaurantDetail}>Name: {food.restaurant.name}</Text>
+                        <Text style={styles.restaurantDetail}>Address: {food.restaurant.address}</Text>
+                        <Text style={styles.restaurantDetail}>Cuisine: {food.restaurant.cuisine}</Text>
+                        <Text style={styles.restaurantDetail}>Description: {food.restaurant.description}</Text>
+                        <Text style={[styles.restaurantDetail, styles.link]}>Phone: {food.restaurant.phone}</Text>
+                    </View>
+                )}
+
+                <MapView
+                    style={styles.map}
+                    region={{
+                        latitude: food.restaurant.coordinates.latitude,
+                        longitude: food.restaurant.coordinates.longitude,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01,
+                    }}
+                >
+                    <UrlTile
+                        urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        maximumZ={19}
+                    />
+                    <Marker coordinate={food.restaurant.coordinates} />
+                </MapView>
 
                 <View style={styles.quantityContainer}>
                     <Text style={styles.quantityLabel}>Quantity:</Text>
@@ -122,6 +170,25 @@ const FoodDetailScreen = ({ route }) => {
                         </TouchableOpacity>
                     </View>
                 </View>
+
+                <View style={styles.discountContainer}>
+                    <TextInput
+                        style={styles.discountInput}
+                        placeholder="Enter discount code"
+                        value={discountCode}
+                        onChangeText={setDiscountCode}
+                        editable={!isValidCode}
+                    />
+                    <TouchableOpacity
+                        style={styles.applyButton}
+                        onPress={validateDiscountCode}
+                        disabled={isValidCode || loading}
+                    >
+                        <Text style={styles.applyButtonText}>{isValidCode ? 'Applied' : 'Apply'}</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <Text style={styles.totalPrice}>Total: Rs. {food.price * quantity - discountAmount}</Text>
 
                 <View style={styles.paymentOptions}>
                     <TouchableOpacity
@@ -151,7 +218,7 @@ const FoodDetailScreen = ({ route }) => {
                     )}
                 </TouchableOpacity>
             </View>
-        </View>
+        </ScrollView>
     );
 };
 
@@ -207,6 +274,37 @@ const styles = StyleSheet.create({
         marginHorizontal: 10,
         color: '#333',
     },
+    discountContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    discountInput: {
+        flex: 1,
+        backgroundColor: '#f2f2f2',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderRadius: 5,
+        marginRight: 10,
+        fontSize: 16,
+        color: '#333',
+    },
+    applyButton: {
+        backgroundColor: '#6200EE',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+    },
+    applyButtonText: {
+        fontSize: 16,
+        color: '#fff',
+    },
+    totalPrice: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        color: '#6200EE',
+    },
     paymentOptions: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -229,23 +327,47 @@ const styles = StyleSheet.create({
         backgroundColor: '#6200EE',
     },
     activePaymentOptiontext: {
-        color: '#ffffff',
+        color: '#fff',
     },
     buyButton: {
-        backgroundColor: '#6200EE',
-        paddingVertical: 12,
-        paddingHorizontal: 10,
-        borderRadius: 5,
-        alignItems: 'center',
         flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#6200EE',
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        borderRadius: 5,
         justifyContent: 'center',
-        marginTop: 20,
     },
     buyButtonText: {
-        color: '#fff',
         fontSize: 18,
-        marginLeft: 5,
-        textAlign: 'center',
+        color: '#fff',
+        marginLeft: 10,
+    },
+    restaurantDetails: {
+        marginTop: 15,
+        padding: 15,
+        backgroundColor: '#f9f9f9',
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    restaurantTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        color: '#333',
+    },
+    restaurantDetail: {
+        fontSize: 16,
+        marginBottom: 5,
+        color: '#555',
+    },
+    map: {
+        height: 200,
+        width: '100%',
+        marginBottom: 20,
+        borderRadius: 8,
+        overflow: 'hidden',
     },
 });
 
