@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator, TextInput, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator, TextInput, ScrollView, Linking } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import MapView, { Marker, UrlTile } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
 import { db, auth } from '../firebase/firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
@@ -95,8 +96,10 @@ const FoodDetailScreen = ({ route }) => {
     };
 
     const validateDiscountCode = () => {
+        const discountPercentage = 10;
         if (discountCode === 'Nischal') {
-            setDiscountAmount(10);
+            const discount = (food.price * quantity * discountPercentage) / 100;
+            setDiscountAmount(discount);
             setIsValidCode(true);
             Alert.alert('Success', 'Discount code applied successfully!');
         } else {
@@ -127,10 +130,25 @@ const FoodDetailScreen = ({ route }) => {
                         <Text style={styles.restaurantDetail}>Address: {food.restaurant.address}</Text>
                         <Text style={styles.restaurantDetail}>Cuisine: {food.restaurant.cuisine}</Text>
                         <Text style={styles.restaurantDetail}>Description: {food.restaurant.description}</Text>
-                        <Text style={styles.restaurantDetail}>Phone: {food.restaurant.phone}</Text>
-                        <Text style={styles.restaurantDetail}>Coordinates: {food.restaurant.coordinates.latitude}, {food.restaurant.coordinates.longitude}</Text>
+                        <Text style={[styles.restaurantDetail, styles.link]}>Phone: {food.restaurant.phone}</Text>
                     </View>
                 )}
+
+                <MapView
+                    style={styles.map}
+                    region={{
+                        latitude: food.restaurant.coordinates.latitude,
+                        longitude: food.restaurant.coordinates.longitude,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01,
+                    }}
+                >
+                    <UrlTile
+                        urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        maximumZ={19}
+                    />
+                    <Marker coordinate={food.restaurant.coordinates} />
+                </MapView>
 
                 <View style={styles.quantityContainer}>
                     <Text style={styles.quantityLabel}>Quantity:</Text>
@@ -327,9 +345,11 @@ const styles = StyleSheet.create({
     },
     restaurantDetails: {
         marginTop: 15,
-        borderTopWidth: 1,
-        borderTopColor: '#eee',
-        paddingTop: 15,
+        padding: 15,
+        backgroundColor: '#f9f9f9',
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#ddd',
     },
     restaurantTitle: {
         fontSize: 18,
@@ -341,6 +361,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginBottom: 5,
         color: '#555',
+    },
+    map: {
+        height: 200,
+        width: '100%',
+        marginBottom: 20,
+        borderRadius: 8,
+        overflow: 'hidden',
     },
 });
 
